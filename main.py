@@ -109,30 +109,47 @@ async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **k
         model = genai.GenerativeModel('gemini-1.5-flash')
         gemini_history = [{"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]} for msg in history_messages]
         full_prompt = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
-        response = await model.generate_content_async(full_prompt, generation_config=genai.types.GenerationConfig(temperature=0.1))
-        return response.text
+        
+        # Note: Gemini's async call does not directly support streaming in the same way as OpenAI.
+        # We will manage the response as a single string. If true streaming is needed,
+        # the `generate_content` method with `stream=True` would be used, which returns a synchronous iterator.
+        # For simplicity in this async context, we'll await the full response.
+        is_stream = kwargs.get("stream", False)
+        if is_stream:
+            # Simulate streaming for this example
+            response = await model.generate_content_async(full_prompt, generation_config=genai.types.GenerationConfig(temperature=0.1))
+            async def stream_generator():
+                yield response.text
+            return stream_generator()
+        else:
+            response = await model.generate_content_async(full_prompt, generation_config=genai.types.GenerationConfig(temperature=0.1))
+            return response.text
     except Exception as e:
         log.error(f"Error calling Gemini API: {e}")
         return "Error: Could not get a response from the LLM."
 
-# NEW: Gemini Embedding Function
+# CORRECTED: Gemini Embedding Function
 async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
     """
     Generates embeddings using the Google Generative AI API.
+    Dynamically sets task_type based on the number of texts.
     """
     try:
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-        # Using the recommended model for text embeddings
+        # Heuristic: if it's a single text, it's a query; otherwise, it's for document storage.
+        task_type = "retrieval_query" if len(texts) == 1 else "retrieval_document"
+        log.info(f"Using Gemini embedding with task_type: {task_type}")
+
+        # The API can handle batching, so send all texts at once.
         result = await genai.embed_content_async(
             model="models/embedding-001",
             content=texts,
-            task_type="retrieval_document" # Use "retrieval_query" for queries
+            task_type=task_type
         )
         return np.array(result['embedding'])
     except Exception as e:
         log.error(f"Error calling Gemini Embedding API: {e}")
-        # Return a zero vector of the correct shape on failure
-        # to avoid crashing the whole process.
+        # Return a zero vector of the correct shape on failure to avoid crashing.
         return np.zeros((len(texts), 768))
 
 # --- RAG System Initialization ---
@@ -147,6 +164,41 @@ async def initialize_rag_system() -> LightRAG:
 
     tokenizer_path = os.path.join(WORKING_DIR, "gemma_tokenizer")
     custom_tokenizer = GemmaTokenizer(tokenizer_dir=tokenizer_path)
+    
+    # <FIX>
+    # This is the core fix. We need to patch the library's internal functions.
+    from lightrag import operate
+    
+    # Store the original functions
+    original_kg_query = operate.kg_query
+    original_naive_query = operate.naive_query
+
+    # Define the patched functions
+    async def patched_kg_query(*args, **kwargs):
+        query_param = kwargs.get('query_param') or args[5]
+        query = kwargs.get('query') or args[0]
+        # Include the stream flag in the cache key
+        operate.compute_args_hash_original = operate.compute_args_hash
+        operate.compute_args_hash = lambda *a, **k: operate.compute_args_hash_original(*a, query_param.stream, **k)
+        result = await original_kg_query(*args, **kwargs)
+        operate.compute_args_hash = operate.compute_args_hash_original # Restore original
+        return result
+
+    async def patched_naive_query(*args, **kwargs):
+        query_param = kwargs.get('query_param') or args[2]
+        query = kwargs.get('query') or args[0]
+        # Include the stream flag in the cache key
+        operate.compute_args_hash_original = operate.compute_args_hash
+        operate.compute_args_hash = lambda *a, **k: operate.compute_args_hash_original(*a, query_param.stream, **k)
+        result = await original_naive_query(*args, **kwargs)
+        operate.compute_args_hash = operate.compute_args_hash_original # Restore original
+        return result
+    
+    # Apply the patches
+    operate.kg_query = patched_kg_query
+    operate.naive_query = patched_naive_query
+    # </FIX>
+
 
     rag = LightRAG(
         # --- Storage Configuration ---
@@ -158,7 +210,7 @@ async def initialize_rag_system() -> LightRAG:
         embedding_func=EmbeddingFunc(
             embedding_dim=768,  # Dimension for 'models/embedding-001'
             max_token_size=8192,
-            func=gemini_embedding_func, # Use the new Gemini embedding function
+            func=gemini_embedding_func, # Use the corrected Gemini embedding function
         ),
         
         # --- Tokenizer ---
@@ -230,9 +282,14 @@ async def main():
     async def print_stream(stream):
         log.info("LightRAG (streaming) > ")
         full_response = ""
-        async for chunk in stream:
-            print(chunk, end="", flush=True)
-            full_response += chunk
+        # Check if the stream is an async iterator
+        if hasattr(stream, "__aiter__"):
+            async for chunk in stream:
+                print(chunk, end="", flush=True)
+                full_response += chunk
+        else: # Handle the case where a string is returned
+            print(stream, end="", flush=True)
+            full_response = stream
         print() # for a newline after the stream
         return full_response
 
@@ -328,7 +385,7 @@ async def main():
         log.error(f"An unexpected error occurred during the RAG process: {e}")
     finally:
         # 4. Important: Finalize storages to ensure data is saved correctly
-        if rag_system:
+        if 'rag_system' in locals() and rag_system:
             log.info("Finalizing storage connections...")
             await rag_system.finalize_storages()
             log.info("RAG system finalized.")

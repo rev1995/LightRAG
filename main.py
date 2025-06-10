@@ -297,7 +297,7 @@ async def main():
         # 2. Ingest all documents from the data directory
         await process_markdown_files(rag_system, DATA_DIR)
 
-        log.info("\n--- 🚀 Starting Generic Analytical Queries ---")
+        log.info("\n--- 🚀 Starting Movie Plot Queries ---")
 
         # --- Query 1: High-Level Thematic Analysis ---
         log.info("\n--- Query 1: Thematic Analysis (Hybrid Mode, Multiple Paragraphs) ---")

@@ -91,6 +91,24 @@
       "embedding_min": null,
       "embedding_max": null,
       "original_prompt": "Provide a comprehensive summary of the entire document, including all key entities and their interactions."
+    },
+    "38a89c25f4f11a8b38fe44317e1ea521": {
+      "return": "{\"high_level_keywords\": [\"Plot summary\"], \"low_level_keywords\": []}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Give me a detailed summary of the whole plot."
+    },
+    "366498396d77447687272a2a371da3e1": {
+      "return": "{\"high_level_keywords\": [\"Plot summary\"], \"low_level_keywords\": []}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Give me a detailed summary of the whole plot."
     }
   },
   "mix": {
@@ -131,6 +149,33 @@
       "embedding_min": null,
       "embedding_max": null,
       "original_prompt": "Describe the relationship between the two most frequently mentioned entities in the text."
+    },
+    "4b5cd3039b298c0a124bc504e4ceab88": {
+      "return": "{\"high_level_keywords\": [\"Relationship\", \"Family ties\", \"Personal connections\"], \"low_level_keywords\": [\"Kumar\", \"Selvi\", \"Family\", \"Marriage\", \"Friendship\", \"Professional relationship\"]}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "What is the relationship between the Kumar and Selvi?"
+    },
+    "1ad03149aeeebef296ebcda9ca3abb9c": {
+      "return": "Kokki Kumar forcibly marries Selvi, leading to conflict and resentment.  Selvi is Mani's sister, and she later reveals her resentment towards Kumar for ruining her life.  After Kumar's actions, Selvi marries her former fiancé, who later disappears, leading to her commitment to a mental asylum.\nReferences:\n* [KG] unknown_source\n* [DC] unknown_source\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "What is the relationship between the Kumar and Selvi?"
+    },
+    "de17dd71884e1a357ec2853b2d891954": {
+      "return": "## Kokki Kumar's Story: From Gangster to Politician\n\nKokki Kumar's life begins tragically with the murder of his mother by his own father.  This event sets in motion a chain of events that propel him from a secondary school student in the slums of Pudhupettai to a powerful gangster and eventually a politician.  After witnessing his mother's murder and narrowly escaping his father's attempt on his life, Kumar flees home, resorting to begging before being arrested on false charges.\n\nHis life takes a sharp turn when he befriends Mani and becomes involved with Anbu's gang, working for Thamizhselvan, a leader of the opposition party and a criminal.  Kumar quickly rises through the ranks, demonstrating exceptional ruthlessness and killing skills, particularly during a confrontation with Murthy, a politician from the ruling party.  He eliminates rivals, takes over Anbu's business after killing him, and ultimately exacts revenge on his father by burying him alive.\n\nKumar's ascent continues as he becomes a feared don in North Chennai. He forcibly marries Selvi, Mani's sister, adding another layer of conflict to his life.  His criminal activities lead to his involvement in politics, initially securing a position within Thamizhselvan's party.  However, his ambition leads him to seek an MLA seat, a move that ultimately results in his removal from the party.\n\nThe conflict with Murthy intensifies, culminating in the murder of Krishnaveni, Kumar's lover and the mother of his child, by Murthy's men.  Despite this tragedy, and Selvi's betrayal and resentment, Kumar manages to get his son back.  He retaliates against Murthy, crippling his right hand in a fight, leading to Murthy's suicide.  Kumar's actions, however, lead to his arrest.\n\nThe story concludes with a surprising twist.  The Chief Minister arranges for Kumar's release and nominates him as an MLA candidate.  He eventually serves multiple terms as an MLA and Finance Minister of Tamil Nadu, yet his search for his son remains unsuccessful.  The epilogue reveals the fates of other characters, including Thamizhselvan's retirement and Selvi's troubled life.\n\n\n## Key Relationships\n\nKumar's relationship with his father is central to the narrative, driven by revenge for his mother's murder. His forced marriage to Selvi leads to conflict and resentment.  Anbu acts as a mentor figure initially, but their relationship ends violently. Thamizhselvan provides Kumar with a path into the criminal underworld and later politics. Finally, the rivalry between Kumar and Murthy, representing the clash between the criminal underworld and the political establishment, forms the backbone of the story's conflict.\n\n\n## References\n\n* [DC] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Give me a detailed summary of the whole plot."
     }
   },
   "local": {

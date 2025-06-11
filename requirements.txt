@@ -25,3 +25,7 @@ google-generativeai
 sentence-transformers
 sentencepiece
 requests
+fastapi[all]
+uvicorn
+numpy
+neo4j

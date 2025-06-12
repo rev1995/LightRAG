@@ -273,7 +273,7 @@ async def main():
     """
     # 1. Check for required environment variables
     if not all(os.getenv(key) for key in ["GEMINI_API_KEY", "NEO4J_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD"]):
-        log.error("Missing one or more required environment variables. Please check your .env file.")
+        log.error("Missing one or more required environment variables. Please check your .env file")
         return
 
     rag_system = await initialize_rag_system()

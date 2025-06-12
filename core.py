@@ -278,7 +278,7 @@ async def main():
 
     rag_system = await initialize_rag_system()
 
-    # A helper function to print streaming responses
+    # A helper function to print streaming responses.
     async def print_stream(stream):
         log.info("LightRAG (streaming) > ")
         full_response = ""

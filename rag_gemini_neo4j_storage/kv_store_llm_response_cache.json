@@ -109,6 +109,96 @@
       "embedding_min": null,
       "embedding_max": null,
       "original_prompt": "Give me a detailed summary of the whole plot."
+    },
+    "a8c9b2f4e7b93a1a37bf720d02cadbbf": {
+      "return": "{\"high_level_keywords\": [\"Person\", \"Name\"], \"low_level_keywords\": [\"Kokkikumar\"]}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Kokkikumar"
+    },
+    "eb9d661f54b2a96040ce027a84a06845": {
+      "return": "## Kokki Kumar's Story\n\nKokki Kumar, a secondary school student from the Pudhupettai slums, becomes a gangster and eventually a politician. His life is driven by revenge for his mother's murder at the hands of his father.  He faces numerous moral dilemmas and challenges, characterized by ruthlessness and ambition, yet also exhibiting a complex internal conflict.  After his mother's death, he flees home, resorting to begging before befriending Mani, who introduces him to Anbu, a gangster working for Thamizhselvan, a leader of the opposition party and criminal.\n\n## Anbu's Role\n\nAnbu initially mentors Kumar, providing him with opportunities within the gang.  However, their relationship deteriorates, culminating in Kumar killing Anbu to take over his business. This act demonstrates Kumar's ambition and ruthlessness, as he betrays his mentor to gain power.  Anbu's death is a pivotal moment in Kumar's rise to power within the criminal underworld.  Anbu also employed Krishnaveni, a prostitute, who later becomes involved with Kumar.\n\n## Kumar's Relationships and Rise to Power\n\nKumar's relationships are complex and often violent. He has a romantic relationship with Krishnaveni, resulting in a child, but their relationship ends tragically when Murthy's men kill her. He forcibly marries Selvi, leading to conflict and resentment.  His rivalry with Murthy, a politician from the ruling party, is marked by violence and death.  Kumar's ambition leads him to work for Thamizhselvan, gaining political power through criminal activities.  His friendship with Mani also turns sour, with Mani eventually betraying him and becoming an informant.\n\n## Kumar's Political Career and Downfall\n\nKumar's criminal activities eventually lead him to a position within Thamizhselvan's party.  He seeks an MLA seat, but his ambition and violent past lead to his removal from the party.  Murthy plans to assassinate Kumar and his family, leading to further tragedy.  Despite the loss of Krishnaveni and near-death experiences, Kumar eventually becomes an MLA and later the Finance Minister of Tamil Nadu.  However, he never finds his son.\n\n## Other Key Figures\n\nOther important figures in Kumar's life include Thamizhselvan, the leader of the opposition party who employs Kumar; Murthy, Kumar's rival from the ruling party; and Selvi, Mani's sister whom Kumar forcibly marries.  Mani, initially Kumar's friend, later betrays him and becomes an informant.\n\n\n**References:**\n\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [DC] unknown_source\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Kokkikumar"
+    },
+    "4a2affbbcb3f20d9404cf3677dd377bb": {
+      "return": "{\"high_level_keywords\": [\"Character names\", \"Actor names\", \"Fictional characters\"], \"low_level_keywords\": [\"Top characters\", \"Real names\"]}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Top characters names and their real name"
+    },
+    "5ab902c0e935575d9dcd937bdeaebb5a": {
+      "return": "Based on the provided knowledge graph and document chunks, here's a summary of the information about Anbu and other key characters:\n\n### Anbu\n\nAnbu is a gangster who works for Thamizhselvan, the leader of the opposition party.  He initially takes Kokki Kumar under his wing, providing him with opportunities within the gang.  Their relationship is described as a mentor-mentee relationship, but it deteriorates, ultimately leading to Anbu's death at Kumar's hands.  Anbu's death is a pivotal point in Kumar's rise to power, as he takes over Anbu's business after killing him.  Krishnaveni, a prostitute who works under Anbu, is also connected to this storyline.\n\n### Other Key Characters\n\n* **Kokki Kumar:** The protagonist, a secondary school student who becomes a gangster and eventually a politician, driven by revenge for his mother's murder.  He is characterized by ruthlessness, ambition, and internal conflict.  His relationships with various characters, including Anbu, Thamizhselvan, Murthy, Selvi, and Krishnaveni, shape his life and career.\n\n* **Thamizhselvan:** The leader of the opposition party and a criminal who employs Anbu and later Kumar.  He provides Kumar with political power and opportunities, but their relationship is transactional and ultimately strained.\n\n* **Murthy:** A politician from the ruling party and a rival of Kumar. Their conflict leads to violence and death.\n\n* **Selvi:** Mani's sister, forcibly married to Kumar. She later reveals her resentment towards him.\n\n* **Mani:** Kumar's friend and associate, initially supporting him but later betraying him by becoming an informant.\n\n\nThe provided text does not contain the real names of the characters.  All names are presented as they appear in the story.\n\n\n### References\n\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [DC] unknown_source\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Top characters names and their real name"
+    },
+    "f8b202a4023c721e5a9ac888a8fdcad9": {
+      "return": "{\"high_level_keywords\": [\"Character names\", \"Actor names\", \"Fictional characters\"], \"low_level_keywords\": [\"Top characters\", \"Real names\", \"Bulletin points\"]}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Top characters names and their real name. Give me in bulletin points"
+    },
+    "84759ef5f63df381ea6b94dcbb1b5ee2": {
+      "return": "Here's a summary of the information about Anbu, along with a bulleted list of character names and their real names (if available):\n\n### Anbu's Story\n\nAnbu is a gangster who works for Thamizhselvan, the leader of the opposition party.  He initially takes Kokki Kumar under his wing, providing him with opportunities within the gang.  Their relationship is ultimately strained, leading to Anbu's death at the hands of Kumar.  Anbu's role is significant in Kumar's rise to power, as Kumar takes over Anbu's business after killing him.  Anbu also employs Krishnaveni, a prostitute.  Kumar's request to release Krishnaveni leads to a conflict that results in Anbu's death.\n\n### Character Names\n\n* **Kokki Kumar:**  This is his given name.\n* **Murthy:** This is his given name.\n* **Selvi:** This is her given name.\n* **Anbu:** This is his given name.\n* **Thamizhselvan:** This is his given name.\n* **Kumar's Mother:** Only her relationship to Kumar is specified.\n* **Mani:** This is his given name.\n* **Krishnaveni:** This is her given name.\n* **Kumar's Father:** Only his relationship to Kumar is specified.\n* **Kumar's Son:** Only his relationship to Kumar is specified.\n\n\n**References:**\n\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [DC] unknown_source\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Top characters names and their real name. Give me in bulletin points"
+    },
+    "3fbbbd4e3cf37846b48488b67ecb0bd4": {
+      "return": "{\"high_level_keywords\": [\"Location\", \"Place\"], \"low_level_keywords\": [\"Puthupettai\"]}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Puthupettai"
+    },
+    "1c2d4c11ade19291e46b171fbae4253f": {
+      "return": "Kokki Kumar's Story: A Summary\n\nKokki Kumar, a secondary school student from the Pudhupettai slums in North Chennai, becomes a gangster and eventually a politician. His journey is driven by revenge for his mother's murder at the hands of his father, who also attempted to kill him.  This event forces Kumar to flee his home, leading him to a life of crime.\n\nKumar's Rise and Relationships\n\nInitially, Kumar befriends Mani and finds mentorship under Anbu, a gangster working for Thamizhselvan, a leader of the opposition party.  Kumar quickly rises through the ranks, killing Murthy's brother in a confrontation, earning the respect of his gang.  His relationship with Anbu deteriorates, culminating in Kumar killing Anbu to take over his business.  Kumar's ambition leads him to work for Thamizhselvan, gaining political power through criminal activities.  He develops a violent rivalry with Murthy, a politician from the ruling party.  Kumar forcibly marries Selvi, Mani's sister, causing resentment and conflict.  He also has a relationship with Krishnaveni, a prostitute, resulting in a child.\n\nKumar's Downfall and Redemption\n\nKumar's criminal activities and political maneuvering lead to conflict and betrayal.  Mani becomes an informant, and Selvi reveals her resentment, contributing to Kumar's downfall.  Murthy's men kill Krishnaveni and kidnap their son.  Kumar's attempts at revenge cripple him, and Murthy ultimately commits suicide.  Kumar is arrested but later released and becomes an MLA, even serving as Finance Minister of Tamil Nadu.  Despite his political success, he never finds his son.\n\nWhy Anbu Was Killed\n\nAnbu was killed by Kokki Kumar.  Anbu refused Kumar's request to release Krishnaveni, a prostitute working under him, and subsequently beat Krishnaveni and ordered his men to kill Kumar.  When Anbu refused to pardon Kumar, Kumar killed him to take over Anbu's business, a move that was later sanctioned by Thamizhselvan.\n\n\nReferences\n\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [DC] unknown_source\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Puthupettai"
+    },
+    "50c6dc0ec690d374dd0302cc5ca7f7fa": {
+      "return": "{\"high_level_keywords\": [\"Film plot\", \"Story summary\"], \"low_level_keywords\": [\"Puthupettai\", \"Tamil film\", \"Plot points\", \"Characters\", \"Themes\"]}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Puthupettai plot"
+    },
+    "49b8df7b6fc00e47275328deadd17a1f": {
+      "return": "Kokki Kumar's Story: A Summary\n\nKokki Kumar, a secondary school student from the Pudhupettai slums, witnesses his mother's murder by his father.  Fearing for his own life after overhearing a plot to kill him, Kumar flees his home.  He becomes involved with a gang led by Anbu, who works for Thamizhselvan, a leader of the opposition party.  Kumar's rise to power is fueled by revenge against his father and his rivalry with Murthy, a politician from the ruling party.  His actions involve gang warfare, forced marriage to Selvi (Mani's sister), and a relationship with Krishnaveni, resulting in a child.  Kumar's ruthlessness leads him to kill Anbu to take over his operations and eventually become a feared don in North Chennai.  His conflict with Murthy continues, culminating in Murthy's suicide.  Despite his criminal past, Kumar is eventually released from prison and becomes a successful politician, serving multiple terms as an MLA and Finance Minister of Tamil Nadu.  However, he remains separated from his son, who was taken after Krishnaveni's murder by Murthy's men.  The story highlights the complex web of relationships, political rivalries, and moral dilemmas that shape Kumar's life.\n\nAnbu's Death\n\nAnbu, a gangster working for Thamizhselvan, initially mentors Kokki Kumar.  However, their relationship deteriorates.  Kumar kills Anbu after Anbu refuses to release Krishnaveni and threatens Kumar.  This act allows Kumar to take over Anbu's business, with Thamizhselvan's approval, after surviving an attack from Anbu's remaining men.\n\n\nReferences\n\n* [DC] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n* [KG] unknown_source\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Puthupettai plot"
     }
   },
   "mix": {
@@ -196,6 +286,24 @@
       "embedding_min": null,
       "embedding_max": null,
       "original_prompt": "Describe the relationship between the two most frequently mentioned entities in the text."
+    },
+    "e19c15f0e9388e9a5b5e20f0e57ecc71": {
+      "return": "{\"high_level_keywords\": [\"Location\", \"Place\"], \"low_level_keywords\": [\"Puthupettai\"]}",
+      "cache_type": "keywords",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Puthupettai"
+    },
+    "d45f30d3164dafa61fca742f23f45a3a": {
+      "return": "## Summary of Kokki Kumar's Story\n\nKokki Kumar's life story begins in the slums of Pudhupettai, North Chennai.  After witnessing his mother's murder by his father, he flees and eventually becomes involved with a gang led by Anbu, who works for Thamizhselvan, a leader of the opposition party and also a criminal.  Kumar quickly rises through the ranks, demonstrating exceptional ruthlessness and killing skills, particularly against the gang led by Murthy, a politician from the ruling party.  Their rivalry is central to the narrative, marked by violence and death on both sides.\n\n## Anbu's Death\n\nAnbu, Kumar's initial mentor, is killed by Kumar.  This occurs after Anbu refuses Kumar's request to release Krishnaveni, a prostitute working for Anbu, and subsequently punishes Krishnaveni and orders Kumar's death.  Kumar, in a desperate attempt to survive, kills Anbu.  This act of betrayal and murder allows Kumar to take over Anbu's business, with the approval of Thamizhselvan, provided he survives the night against Anbu's remaining men.\n\n## Key Relationships and Events\n\nKumar's relationship with Thamizhselvan is transactional; Thamizhselvan provides Kumar with political opportunities, but their relationship is ultimately strained.  Kumar's violent conflict with Murthy dominates much of the narrative, culminating in Murthy's suicide.  Other significant relationships include Kumar's marriages to Selvi and Krishnaveni (who is pregnant with his child), and his complex relationship with Mani, who eventually becomes an informant against him.  The story concludes with Kumar's arrest, followed by a surprising release and subsequent political career.\n\n## Political Career and Aftermath\n\nDespite his criminal past, Kumar eventually becomes a successful politician, serving multiple terms as an MLA and even as the Finance Minister of Tamil Nadu.  However, the tragedy of losing his son, Krishnaveni, and the estrangement from Selvi, highlight the lasting consequences of his violent past.  Thamizhselvan retires from politics and settles abroad, while Selvi's life takes a tragic turn.\n\n\n## References\n\n* [DC] unknown_source (Document Chunk 1 detailing Kokki Kumar's life story)\n* [KG] unknown_source (Knowledge Graph Entities describing key figures and locations)\n* [KG] unknown_source (Knowledge Graph Relationships detailing the connections between characters)\n* [KG] unknown_source (Entity: Kokki Kumar)\n* [KG] unknown_source (Entity: Anbu)\n\n",
+      "cache_type": "query",
+      "embedding": null,
+      "embedding_shape": null,
+      "embedding_min": null,
+      "embedding_max": null,
+      "original_prompt": "Puthupettai"
     }
   }
 }

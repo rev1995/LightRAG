@@ -11,6 +11,7 @@ import requests
 from lightrag.utils import setup_logger, EmbeddingFunc, Tokenizer
 from lightrag import LightRAG, QueryParam
 from lightrag.kg.shared_storage import initialize_pipeline_status
+from lightrag.base import DocStatus # Import DocStatus for final check
 from lightrag import operate
 
 # --- Dependency Imports ---
@@ -110,9 +111,9 @@ async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **k
             history_messages = []
         try:
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-2.0-flash')
+            model = genai.GenerativeModel('gemini-1.5-flash')
             gemini_history = [{"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]} for msg in history_messages]
-            
+
             full_prompt_parts = []
             if system_prompt:
                 full_prompt_parts.append(system_prompt)
@@ -147,18 +148,19 @@ async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
     async with embedding_qpm_limiter:
         try:
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+            # The API supports batching up to 100 texts
             task_type = "retrieval_query" if len(texts) == 1 else "retrieval_document"
-            
             result = await genai.embed_content_async(
                 model="models/embedding-001",
                 content=texts,
                 task_type=task_type
             )
+            # The result for batch embedding is a list of embeddings
             return np.array(result['embedding'])
         except Exception as e:
             log.error(f"Error calling Gemini Embedding API: {e}", exc_info=True)
+            # Return a zero array with the correct shape on error
             return np.zeros((len(texts), 768))
-
 
 # --- Patched RAG System for Correct Caching ---
 class PatchedLightRAG(LightRAG):
@@ -169,7 +171,6 @@ class PatchedLightRAG(LightRAG):
     async def aquery(self, query: str, param: QueryParam = QueryParam(), system_prompt: str | None = None) -> str | asyncio.StreamReader:
         # Temporarily patch the hashing function to include the stream flag
         original_hasher = operate.compute_args_hash
-        
         def patched_hasher(*args, **kwargs):
             # Add the stream flag to the list of arguments being hashed
             return original_hasher(*args, param.stream, **kwargs)
@@ -194,7 +195,7 @@ async def initialize_rag_system() -> LightRAG:
 
     tokenizer_path = os.path.join(WORKING_DIR, "gemma_tokenizer")
     custom_tokenizer = GemmaTokenizer(tokenizer_dir=tokenizer_path)
-    
+
     rag = PatchedLightRAG( # Use the patched class
         working_dir=WORKING_DIR,
         graph_storage="Neo4JStorage",
@@ -214,10 +215,11 @@ async def initialize_rag_system() -> LightRAG:
     log.info("LightRAG system initialized successfully.")
     return rag
 
-# --- Document Processing (FIXED) ---
+# --- Document Processing (FIXED with Detailed Logging) ---
 async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
     """
-    Recursively finds and ingests all markdown files one by one for detailed logging.
+    Recursively finds and ingests all markdown files one by one, providing
+    detailed logs about the ingestion pipeline stages.
     """
     log.info(f"Scanning for markdown files in '{data_directory}'...")
     data_path = Path(data_directory)
@@ -230,7 +232,6 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
     total_files = len(md_files)
     log.info(f"Found {total_files} markdown files to process.")
 
-    # Process files sequentially to provide clear, per-file logging
     for i, file_path in enumerate(md_files):
         log.info(f"--- [File {i+1}/{total_files}] START: Processing '{file_path}' ---")
         try:
@@ -241,19 +242,39 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
                 log.warning(f"[File {i+1}/{total_files}] SKIPPED: '{file_path}' is empty.")
                 continue
 
-            # ainsert handles all steps: KV storage, chunking, embedding, vector storage, and KG extraction
-            log.info(f"[File {i+1}/{total_files}] In-flight: Storing, embedding, and extracting knowledge graph...")
+            # Check if document is already processed to avoid re-processing
+            doc_id = str(file_path)
+            existing_doc_status_map = await rag_instance.aget_docs_by_ids(doc_id)
+            existing_doc_status = existing_doc_status_map.get(doc_id)
+            if existing_doc_status and existing_doc_status.status == DocStatus.PROCESSED:
+                log.info(f"[File {i+1}/{total_files}] SKIPPED: '{file_path}' has already been successfully processed.")
+                continue
+
+            # Step 1: Enqueue the document. This updates the document status KV store.
+            log.info(f"[File {i+1}/{total_files}] Step 1/2: Enqueuing document for processing...")
+            await rag_instance.apipeline_enqueue_documents(input=[content], file_paths=[file_path.name], ids=[doc_id])
+            log.info(f"[File {i+1}/{total_files}] Step 1/2: Document enqueued successfully.")
+
+            # Step 2: Process the queue. This is the main, long-running task.
+            # The lightrag library will now log the detailed sub-steps (chunking, extracting, merging, embedding, etc.).
+            log.info(f"[File {i+1}/{total_files}] Step 2/2: Starting main processing pipeline...")
+            await rag_instance.apipeline_process_enqueue_documents()
             
-            # CORRECTED: Pass [content] as a positional argument, not a keyword argument.
-            await rag_instance.ainsert([content], ids=[str(file_path)], file_paths=[str(file_path)])
-            
-            # If ainsert completes without error, all steps for this file were successful.
-            log.info(f"[File {i+1}/{total_files}] SUCCESS: Finished processing '{file_path}'.")
+            # Step 3: Verify the final status of the document to confirm success.
+            final_doc_status_map = await rag_instance.aget_docs_by_ids(doc_id)
+            final_doc_status = final_doc_status_map.get(doc_id)
+
+            if final_doc_status and final_doc_status.status == DocStatus.PROCESSED:
+                 log.info(f"VERIFIED: Final status for '{file_path}' is PROCESSED.")
+            elif final_doc_status:
+                 log.error(f"VERIFICATION FAILED: Processing finished but status is {final_doc_status.status}. Error: {final_doc_status.error}")
+            else:
+                 log.error(f"VERIFICATION FAILED: Could not retrieve final status for document '{file_path}'.")
 
         except Exception as e:
-            log.error(f"[File {i+1}/{total_files}] FAILED: Could not process file '{file_path}'. Reason: {e}", exc_info=True)
+            log.error(f"UNHANDLED EXCEPTION while processing '{file_path}': {e}", exc_info=True)
         finally:
              log.info(f"--- [File {i+1}/{total_files}] END: Processing '{file_path}' ---")
 
-    log.info(f"Document ingestion complete. Processed {total_files} files.")
+    log.info(f"Document ingestion complete. Attempted to process {total_files} files.")
     

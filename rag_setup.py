@@ -17,6 +17,7 @@ from lightrag import operate
 import numpy as np
 import google.generativeai as genai
 import sentencepiece as spm
+from aiolimiter import AsyncLimiter  # <-- ADDED: Import for rate limiting
 
 # --- Configuration ---
 setup_logger("lightrag", level="INFO")
@@ -25,8 +26,17 @@ log = logging.getLogger("lightrag")
 # The working directory for LightRAG's cache and other files
 WORKING_DIR = "./rag_gemini_neo4j_storage"
 
-# The directory containing your markdown files (FIXED: Added here)
+# The directory containing your markdown files
 DATA_DIR = "./data"
+
+# --- Rate Limiting for Gemini API (NEW) ---
+# Gemini 2.0 Flash limits: 15 RPM, 1500 RPD
+# We create two limiters to handle these two separate constraints.
+gemini_rpm_limiter = AsyncLimiter(15, 60)  # Max 15 requests per 60 seconds
+gemini_rpd_limiter = AsyncLimiter(1500, 24 * 60 * 60) # Max 1500 requests per day
+
+# The embedding-001 model has a much higher limit of 1500 QPM (Queries Per Minute)
+embedding_qpm_limiter = AsyncLimiter(1500, 60) # Max 1500 requests per 60 seconds
 
 # --- Custom Tokenizer (avoids tiktoken dependency) ---
 class GemmaTokenizer(Tokenizer):
@@ -99,57 +109,63 @@ class GemmaTokenizer(Tokenizer):
 
 # --- LLM and Embedding Functions ---
 async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **kwargs) -> str:
-    if history_messages is None:
-        history_messages = []
-    try:
-        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        gemini_history = [{"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]} for msg in history_messages]
-        
-        full_prompt_parts = []
-        if system_prompt:
-            full_prompt_parts.append(system_prompt)
-        full_prompt_parts.append(prompt)
-        full_prompt = "\n\n".join(full_prompt_parts)
+    # UPDATED: Added rate limiting wrappers
+    # The async with statements will pause execution if a rate limit is exceeded,
+    # and resume only when a slot is available in both the RPM and RPD buckets.
+    async with gemini_rpm_limiter, gemini_rpd_limiter:
+        if history_messages is None:
+            history_messages = []
+        try:
+            genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+            model = genai.GenerativeModel('gemini-2.0-flash')
+            gemini_history = [{"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]} for msg in history_messages]
+            
+            full_prompt_parts = []
+            if system_prompt:
+                full_prompt_parts.append(system_prompt)
+            full_prompt_parts.append(prompt)
+            full_prompt = "\n\n".join(full_prompt_parts)
 
-        chat_session_messages = gemini_history + [{"role": "user", "parts": [{"text": full_prompt}]}]
-        
-        is_stream = kwargs.get("stream", False)
-        if is_stream:
-            response_stream = await model.generate_content_async(
-                contents=chat_session_messages, 
-                stream=True,
-                generation_config=genai.types.GenerationConfig(temperature=0.1)
-            )
-            async def stream_generator():
-                async for chunk in response_stream:
-                    if chunk.text:
-                        yield chunk.text
-            return stream_generator()
-        else:
-            response = await model.generate_content_async(
-                contents=chat_session_messages,
-                generation_config=genai.types.GenerationConfig(temperature=0.1)
-            )
-            return response.text
-    except Exception as e:
-        log.error(f"Error calling Gemini API: {e}", exc_info=True)
-        return "Error: Could not get a response from the LLM."
+            chat_session_messages = gemini_history + [{"role": "user", "parts": [{"text": full_prompt}]}]
+            
+            is_stream = kwargs.get("stream", False)
+            if is_stream:
+                response_stream = await model.generate_content_async(
+                    contents=chat_session_messages, 
+                    stream=True,
+                    generation_config=genai.types.GenerationConfig(temperature=0.1)
+                )
+                async def stream_generator():
+                    async for chunk in response_stream:
+                        if chunk.text:
+                            yield chunk.text
+                return stream_generator()
+            else:
+                response = await model.generate_content_async(
+                    contents=chat_session_messages,
+                    generation_config=genai.types.GenerationConfig(temperature=0.1)
+                )
+                return response.text
+        except Exception as e:
+            log.error(f"Error calling Gemini API: {e}", exc_info=True)
+            return "Error: Could not get a response from the LLM."
 
 async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
-    try:
-        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-        task_type = "retrieval_query" if len(texts) == 1 else "retrieval_document"
-        
-        result = await genai.embed_content_async(
-            model="models/embedding-001",
-            content=texts,
-            task_type=task_type
-        )
-        return np.array(result['embedding'])
-    except Exception as e:
-        log.error(f"Error calling Gemini Embedding API: {e}", exc_info=True)
-        return np.zeros((len(texts), 768))
+    # UPDATED: Added rate limiting for the embedding model as well
+    async with embedding_qpm_limiter:
+        try:
+            genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+            task_type = "retrieval_query" if len(texts) == 1 else "retrieval_document"
+            
+            result = await genai.embed_content_async(
+                model="models/embedding-001",
+                content=texts,
+                task_type=task_type
+            )
+            return np.array(result['embedding'])
+        except Exception as e:
+            log.error(f"Error calling Gemini Embedding API: {e}", exc_info=True)
+            return np.zeros((len(texts), 768))
 
 
 # --- Patched RAG System for Correct Caching ---

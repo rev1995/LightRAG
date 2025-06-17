@@ -1,0 +1,7 @@
+---
+title Certificates
+content_type concept
+weight 20
+---
+
+To learn how to generate certificates for your cluster, see [Certificates](docstasksadminister-clustercertificates).

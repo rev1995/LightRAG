@@ -1,0 +1,57 @@
+---
+title Running Pods on Only Some Nodes
+content_type task
+weight 30
+---
+
+This page demonstrates how can you run  on only some  as part of a
+
+# #  heading prerequisites
+
+# # Running Pods on only some Nodes
+
+Imagine that you want to run a , but you only need to run those daemon pods
+on nodes that have local solid state (SSD) storage. For example, the Pod might provide cache service to the
+node, and the cache is only useful when low-latency local storage is available.
+
+# # # Step 1 Add labels to your nodes
+
+Add the label `ssdtrue` to the nodes which have SSDs.
+
+```shell
+kubectl label nodes example-node-1 example-node-2 ssdtrue
+```
+
+# # # Step 2 Create the manifest
+
+Lets create a  which will provision the daemon pods on the SSD labeled  only.
+
+Next, use a `nodeSelector` to ensure that the DaemonSet only runs Pods on nodes
+with the `ssd` label set to `true`.
+
+ code_sample filecontrollersdaemonset-label-selector.yaml
+
+# # # Step 3 Create the DaemonSet
+
+Create the DaemonSet from the manifest by using `kubectl create` or `kubectl apply`
+
+Lets label another node as `ssdtrue`.
+
+```shell
+kubectl label nodes example-node-3 ssdtrue
+```
+
+Labelling the node automatically triggers the control plane (specifically, the DaemonSet controller)
+to run a new daemon pod on that node.
+
+```shell
+kubectl get pods -o wide
+```
+The output is similar to
+
+```
+NAME                              READY     STATUS    RESTARTS   AGE    IP      NODE
+    11       Running   0          13s    .....   example-node-1
+    11       Running   0          13s    .....   example-node-2
+    11       Running   0          5s     .....   example-node-3
+```

@@ -11,7 +11,7 @@ import requests
 from lightrag.utils import setup_logger, EmbeddingFunc, Tokenizer
 from lightrag import LightRAG, QueryParam
 from lightrag.kg.shared_storage import initialize_pipeline_status
-from lightrag.base import DocStatus # Import DocStatus for final check
+from lightrag.base import DocStatus
 from lightrag import operate
 
 # --- Dependency Imports ---
@@ -109,9 +109,10 @@ async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **k
     async with gemini_rpm_limiter, gemini_rpd_limiter:
         if history_messages is None:
             history_messages = []
+        # The try...except block now re-raises the exception to be caught by the main pipeline
         try:
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-1.5-flash')
+            model = genai.GenerativeModel('gemini-2.0-flash')
             gemini_history = [{"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]} for msg in history_messages]
 
             full_prompt_parts = []
@@ -121,11 +122,11 @@ async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **k
             full_prompt = "\n\n".join(full_prompt_parts)
 
             chat_session_messages = gemini_history + [{"role": "user", "parts": [{"text": full_prompt}]}]
-            
+
             is_stream = kwargs.get("stream", False)
             if is_stream:
                 response_stream = await model.generate_content_async(
-                    contents=chat_session_messages, 
+                    contents=chat_session_messages,
                     stream=True,
                     generation_config=genai.types.GenerationConfig(temperature=0.1)
                 )
@@ -141,54 +142,42 @@ async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **k
                 )
                 return response.text
         except Exception as e:
-            log.error(f"Error calling Gemini API: {e}", exc_info=True)
-            return "Error: Could not get a response from the LLM."
+            log.error(f"FATAL ERROR in Gemini API call: {e}", exc_info=True)
+            # Re-raise the exception so the pipeline knows to fail
+            raise
 
 async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
     async with embedding_qpm_limiter:
         try:
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-            # The API supports batching up to 100 texts
             task_type = "retrieval_query" if len(texts) == 1 else "retrieval_document"
             result = await genai.embed_content_async(
                 model="models/embedding-001",
                 content=texts,
                 task_type=task_type
             )
-            # The result for batch embedding is a list of embeddings
             return np.array(result['embedding'])
         except Exception as e:
-            log.error(f"Error calling Gemini Embedding API: {e}", exc_info=True)
-            # Return a zero array with the correct shape on error
-            return np.zeros((len(texts), 768))
+            log.error(f"FATAL ERROR in Gemini Embedding API call: {e}", exc_info=True)
+            # Re-raise the exception
+            raise
 
 # --- Patched RAG System for Correct Caching ---
 class PatchedLightRAG(LightRAG):
-    """
-    Overrides the aquery method to ensure the cache key is unique for
-    streaming vs. non-streaming responses. This is a crucial fix for caching.
-    """
     async def aquery(self, query: str, param: QueryParam = QueryParam(), system_prompt: str | None = None) -> str | asyncio.StreamReader:
-        # Temporarily patch the hashing function to include the stream flag
         original_hasher = operate.compute_args_hash
         def patched_hasher(*args, **kwargs):
-            # Add the stream flag to the list of arguments being hashed
             return original_hasher(*args, param.stream, **kwargs)
 
         operate.compute_args_hash = patched_hasher
-        
         try:
-            # Call the original parent method
             result = await super().aquery(query, param, system_prompt)
         finally:
-            # IMPORTANT: Restore the original function to avoid side effects
             operate.compute_args_hash = original_hasher
-            
         return result
 
 # --- RAG System Initialization ---
 async def initialize_rag_system() -> LightRAG:
-    """Initializes the PatchedLightRAG instance."""
     log.info("Initializing LightRAG with Gemini, Neo4j, and cache patch...")
     if not os.path.exists(WORKING_DIR):
         os.makedirs(WORKING_DIR)
@@ -196,7 +185,8 @@ async def initialize_rag_system() -> LightRAG:
     tokenizer_path = os.path.join(WORKING_DIR, "gemma_tokenizer")
     custom_tokenizer = GemmaTokenizer(tokenizer_dir=tokenizer_path)
 
-    rag = PatchedLightRAG( # Use the patched class
+    # Note: max_parallel_insert is a property of the LightRAG instance
+    rag = PatchedLightRAG(
         working_dir=WORKING_DIR,
         graph_storage="Neo4JStorage",
         llm_model_func=gemini_llm_func,
@@ -208,6 +198,7 @@ async def initialize_rag_system() -> LightRAG:
         tokenizer=custom_tokenizer,
         enable_llm_cache=True,
         enable_llm_cache_for_entity_extract=True,
+        max_parallel_insert=int(os.getenv("MAX_PARALLEL_INSERT", 2)) # Respect environment variable
     )
 
     await rag.initialize_storages()
@@ -215,66 +206,84 @@ async def initialize_rag_system() -> LightRAG:
     log.info("LightRAG system initialized successfully.")
     return rag
 
-# --- Document Processing (FIXED with Detailed Logging) ---
+# --- Document Processing with Batching and Fail-Fast Error Handling ---
 async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
     """
-    Recursively finds and ingests all markdown files one by one, providing
-    detailed logs about the ingestion pipeline stages.
+    Finds and ingests markdown files in batches. Skips already processed files,
+    retries failed files, and stops the entire process on any unrecoverable error.
     """
-    log.info(f"Scanning for markdown files in '{data_directory}'...")
+    log.info(f"Starting ingestion process for directory '{data_directory}'...")
     data_path = Path(data_directory)
-    md_files = list(data_path.rglob("*.md"))
-
-    if not md_files:
-        log.warning(f"No markdown files found in '{data_directory}'.")
+    all_files = list(data_path.rglob("*.md"))
+    
+    if not all_files:
+        log.warning(f"No markdown files found in '{data_directory}'. Ingestion finished.")
         return
 
-    total_files = len(md_files)
-    log.info(f"Found {total_files} markdown files to process.")
+    log.info(f"Found {len(all_files)} markdown files to check.")
 
-    for i, file_path in enumerate(md_files):
-        log.info(f"--- [File {i+1}/{total_files}] START: Processing '{file_path}' ---")
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                content = f.read()
+    try:
+        # 1. Determine which files actually need processing
+        all_doc_ids = [str(file_path) for file_path in all_files]
+        existing_statuses = await rag_instance.aget_docs_by_ids(all_doc_ids)
 
-            if not content.strip():
-                log.warning(f"[File {i+1}/{total_files}] SKIPPED: '{file_path}' is empty.")
-                continue
-
-            # Check if document is already processed to avoid re-processing
+        files_to_process = []
+        for file_path in all_files:
             doc_id = str(file_path)
-            existing_doc_status_map = await rag_instance.aget_docs_by_ids(doc_id)
-            existing_doc_status = existing_doc_status_map.get(doc_id)
-            if existing_doc_status and existing_doc_status.status == DocStatus.PROCESSED:
-                log.info(f"[File {i+1}/{total_files}] SKIPPED: '{file_path}' has already been successfully processed.")
+            status_obj = existing_statuses.get(doc_id)
+            if status_obj and status_obj.get('status') == DocStatus.PROCESSED.value:
+                log.info(f"SKIPPED: Document '{file_path.name}' is already processed.")
+            else:
+                if status_obj and status_obj.get('status') == DocStatus.FAILED.value:
+                    error_reason = status_obj.get('error', 'Unknown error')
+                    log.warning(f"RETRYING: Document '{file_path.name}' previously failed. Reason: {error_reason}")
+                files_to_process.append(file_path)
+
+        if not files_to_process:
+            log.info("All found documents are already processed. Ingestion finished.")
+            return
+        
+        # 2. Process the necessary files in batches
+        batch_size = rag_instance.max_parallel_insert
+        log.info(f"Processing {len(files_to_process)} new/failed files in batches of {batch_size}.")
+
+        for i in range(0, len(files_to_process), batch_size):
+            current_batch_paths = files_to_process[i:i + batch_size]
+            log.info(f"--- Starting Batch {i//batch_size + 1} ({len(current_batch_paths)} files) ---")
+
+            contents_to_process = []
+            file_paths_to_process = []
+            doc_ids_to_process = []
+            for file_path in current_batch_paths:
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as f:
+                        content = f.read()
+                    if content.strip():
+                        contents_to_process.append(content)
+                        file_paths_to_process.append(file_path.name)
+                        doc_ids_to_process.append(str(file_path))
+                    else:
+                        log.warning(f"SKIPPED in batch: File '{file_path.name}' is empty.")
+                except Exception as e:
+                    log.error(f"FAILED TO READ in batch: Could not read file '{file_path.name}'. Reason: {e}")
+            
+            if not contents_to_process:
+                log.warning(f"Batch {i//batch_size + 1} has no valid files to process. Skipping.")
                 continue
 
-            # Step 1: Enqueue the document. This updates the document status KV store.
-            log.info(f"[File {i+1}/{total_files}] Step 1/2: Enqueuing document for processing...")
-            await rag_instance.apipeline_enqueue_documents(input=[content], file_paths=[file_path.name], ids=[doc_id])
-            log.info(f"[File {i+1}/{total_files}] Step 1/2: Document enqueued successfully.")
-
-            # Step 2: Process the queue. This is the main, long-running task.
-            # The lightrag library will now log the detailed sub-steps (chunking, extracting, merging, embedding, etc.).
-            log.info(f"[File {i+1}/{total_files}] Step 2/2: Starting main processing pipeline...")
+            # Enqueue and process the current batch
+            await rag_instance.apipeline_enqueue_documents(
+                input=contents_to_process,
+                file_paths=file_paths_to_process,
+                ids=doc_ids_to_process
+            )
             await rag_instance.apipeline_process_enqueue_documents()
-            
-            # Step 3: Verify the final status of the document to confirm success.
-            final_doc_status_map = await rag_instance.aget_docs_by_ids(doc_id)
-            final_doc_status = final_doc_status_map.get(doc_id)
+            log.info(f"--- Finished Batch {i//batch_size + 1} ---")
 
-            if final_doc_status and final_doc_status.status == DocStatus.PROCESSED:
-                 log.info(f"VERIFIED: Final status for '{file_path}' is PROCESSED.")
-            elif final_doc_status:
-                 log.error(f"VERIFICATION FAILED: Processing finished but status is {final_doc_status.status}. Error: {final_doc_status.error}")
-            else:
-                 log.error(f"VERIFICATION FAILED: Could not retrieve final status for document '{file_path}'.")
+        log.info("All batches processed successfully.")
 
-        except Exception as e:
-            log.error(f"UNHANDLED EXCEPTION while processing '{file_path}': {e}", exc_info=True)
-        finally:
-             log.info(f"--- [File {i+1}/{total_files}] END: Processing '{file_path}' ---")
-
-    log.info(f"Document ingestion complete. Attempted to process {total_files} files.")
-    
+    except Exception as e:
+        # This is the "fail-fast" logic. Any unhandled exception from the pipeline will be caught here.
+        log.error(f"A critical error occurred during the ingestion pipeline, and the process has been stopped. Reason: {e}", exc_info=True)
+        # We explicitly stop here by returning. The background task will terminate.
+        return

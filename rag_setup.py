@@ -7,6 +7,12 @@ import hashlib
 import dataclasses
 import requests
 
+# Import load_dotenv to load environment variables from .env file
+from dotenv import load_dotenv
+
+# Load environment variables from .env file at the beginning
+load_dotenv()
+
 # Ensure the logger is configured
 from lightrag.utils import setup_logger, EmbeddingFunc, Tokenizer
 from lightrag import LightRAG, QueryParam
@@ -30,9 +36,9 @@ WORKING_DIR = "./rag_gemini_neo4j_storage"
 # The directory containing your files
 DATA_DIR = "./data"
 
-# --- Rate Limiting for Gemini API ---
-gemini_rpm_limiter = AsyncLimiter(15, 60)
-gemini_rpd_limiter = AsyncLimiter(1500, 24 * 60 * 60)
+# --- Rate Limiting for Gemini API (Good practice, especially for embeddings) ---
+# This limiter primarily acts as a safety for the embedding function, which can process in batches.
+# The main LLM rate limiting is handled by the MAX_ASYNC=1 setting.
 embedding_qpm_limiter = AsyncLimiter(1500, 60)
 
 # --- Custom Tokenizer (avoids tiktoken dependency) ---
@@ -106,56 +112,58 @@ class GemmaTokenizer(Tokenizer):
 
 # --- LLM and Embedding Functions ---
 async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **kwargs) -> str:
-    async with gemini_rpm_limiter, gemini_rpd_limiter:
-        if history_messages is None:
-            history_messages = []
-        # The try...except block now re-raises the exception to be caught by the main pipeline
-        try:
-            genai.configure(api_key=os.environ["GEMINI_API_KEY"])
-            model = genai.GenerativeModel('gemini-2.0-flash')
-            gemini_history = [{"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]} for msg in history_messages]
+    # The user's original limiters are removed as MAX_ASYNC=1 is the primary control now.
+    if history_messages is None:
+        history_messages = []
+    # The try...except block now re-raises the exception to be caught by the main pipeline
+    try:
+        genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+        model = genai.GenerativeModel('gemini-1.5-flash')
+        gemini_history = [{"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]} for msg in history_messages]
 
-            full_prompt_parts = []
-            if system_prompt:
-                full_prompt_parts.append(system_prompt)
-            full_prompt_parts.append(prompt)
-            full_prompt = "\n\n".join(full_prompt_parts)
+        full_prompt_parts = []
+        if system_prompt:
+            full_prompt_parts.append(system_prompt)
+        full_prompt_parts.append(prompt)
+        full_prompt = "\n\n".join(full_prompt_parts)
 
-            chat_session_messages = gemini_history + [{"role": "user", "parts": [{"text": full_prompt}]}]
+        chat_session_messages = gemini_history + [{"role": "user", "parts": [{"text": full_prompt}]}]
 
-            is_stream = kwargs.get("stream", False)
-            if is_stream:
-                response_stream = await model.generate_content_async(
-                    contents=chat_session_messages,
-                    stream=True,
-                    generation_config=genai.types.GenerationConfig(temperature=0.1)
-                )
-                async def stream_generator():
-                    async for chunk in response_stream:
-                        if chunk.text:
-                            yield chunk.text
-                return stream_generator()
-            else:
-                response = await model.generate_content_async(
-                    contents=chat_session_messages,
-                    generation_config=genai.types.GenerationConfig(temperature=0.1)
-                )
-                return response.text
-        except Exception as e:
-            log.error(f"FATAL ERROR in Gemini API call: {e}", exc_info=True)
-            # Re-raise the exception so the pipeline knows to fail
-            raise
+        is_stream = kwargs.get("stream", False)
+        if is_stream:
+            response_stream = await model.generate_content_async(
+                contents=chat_session_messages,
+                stream=True,
+                generation_config=genai.types.GenerationConfig(temperature=0.1)
+            )
+            async def stream_generator():
+                async for chunk in response_stream:
+                    if chunk.text:
+                        yield chunk.text
+            return stream_generator()
+        else:
+            response = await model.generate_content_async(
+                contents=chat_session_messages,
+                generation_config=genai.types.GenerationConfig(temperature=0.1)
+            )
+            return response.text
+    except Exception as e:
+        log.error(f"FATAL ERROR in Gemini API call: {e}", exc_info=True)
+        # Re-raise the exception so the pipeline knows to fail
+        raise
 
 async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
     async with embedding_qpm_limiter:
         try:
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
             task_type = "retrieval_query" if len(texts) == 1 else "retrieval_document"
+            # Using embed_content for batching efficiency
             result = await genai.embed_content_async(
                 model="models/embedding-001",
                 content=texts,
                 task_type=task_type
             )
+            # The result for a batch is in 'embedding', which is a list of lists.
             return np.array(result['embedding'])
         except Exception as e:
             log.error(f"FATAL ERROR in Gemini Embedding API call: {e}", exc_info=True)
@@ -185,20 +193,27 @@ async def initialize_rag_system() -> LightRAG:
     tokenizer_path = os.path.join(WORKING_DIR, "gemma_tokenizer")
     custom_tokenizer = GemmaTokenizer(tokenizer_dir=tokenizer_path)
 
-    # Note: max_parallel_insert is a property of the LightRAG instance
+    # Fetch concurrency settings from environment variables, with safe defaults.
+    max_async_calls = int(os.getenv("MAX_ASYNC", 1))
+    max_parallel_files = int(os.getenv("MAX_PARALLEL_INSERT", 1))
+
+    log.info(f"Configuring LightRAG with MAX_ASYNC={max_async_calls} and MAX_PARALLEL_INSERT={max_parallel_files}")
+
     rag = PatchedLightRAG(
         working_dir=WORKING_DIR,
         graph_storage="Neo4JStorage",
         llm_model_func=gemini_llm_func,
         embedding_func=EmbeddingFunc(
             embedding_dim=768,
-            max_token_size=8192,
+            max_token_size=2048, # The embedding model has a 2048 token limit
             func=gemini_embedding_func,
         ),
         tokenizer=custom_tokenizer,
         enable_llm_cache=True,
         enable_llm_cache_for_entity_extract=True,
-        max_parallel_insert=int(os.getenv("MAX_PARALLEL_INSERT", 2)) # Respect environment variable
+        # Set the concurrency parameters fetched from the environment
+        llm_model_max_async=max_async_calls,
+        max_parallel_insert=max_parallel_files
     )
 
     await rag.initialize_storages()

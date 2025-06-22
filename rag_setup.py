@@ -27,7 +27,7 @@ log = logging.getLogger("lightrag")
 # The working directory for LightRAG's cache and other files
 WORKING_DIR = "./rag_gemini_neo4j_storage"
 
-# The directory containing your markdown files
+# The directory containing your files
 DATA_DIR = "./data"
 
 # --- Rate Limiting for Gemini API ---

@@ -6,6 +6,7 @@ from pathlib import Path
 import hashlib
 import dataclasses
 import requests
+from datetime import datetime, timezone
 
 # Import load_dotenv to load environment variables from .env file
 from dotenv import load_dotenv
@@ -14,11 +15,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Ensure the logger is configured
-from lightrag.utils import setup_logger, EmbeddingFunc, Tokenizer
+from lightrag.utils import setup_logger, EmbeddingFunc, Tokenizer, compute_args_hash
 from lightrag import LightRAG, QueryParam
 from lightrag.kg.shared_storage import initialize_pipeline_status
 from lightrag.base import DocStatus
 from lightrag import operate
+from lightrag import prompt as prompt_template_module
 
 # --- Dependency Imports ---
 import numpy as np
@@ -37,8 +39,6 @@ WORKING_DIR = "./rag_gemini_neo4j_storage"
 DATA_DIR = "./data"
 
 # --- Rate Limiting for Gemini API (Good practice, especially for embeddings) ---
-# This limiter primarily acts as a safety for the embedding function, which can process in batches.
-# The main LLM rate limiting is handled by the MAX_ASYNC=1 setting.
 embedding_qpm_limiter = AsyncLimiter(1500, 60)
 
 # --- Custom Tokenizer (avoids tiktoken dependency) ---
@@ -112,10 +112,8 @@ class GemmaTokenizer(Tokenizer):
 
 # --- LLM and Embedding Functions ---
 async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **kwargs) -> str:
-    # The user's original limiters are removed as MAX_ASYNC=1 is the primary control now.
     if history_messages is None:
         history_messages = []
-    # The try...except block now re-raises the exception to be caught by the main pipeline
     try:
         genai.configure(api_key=os.environ["GEMINI_API_KEY"])
         model = genai.GenerativeModel('gemini-1.5-flash')
@@ -149,7 +147,6 @@ async def gemini_llm_func(prompt, system_prompt=None, history_messages=None, **k
             return response.text
     except Exception as e:
         log.error(f"FATAL ERROR in Gemini API call: {e}", exc_info=True)
-        # Re-raise the exception so the pipeline knows to fail
         raise
 
 async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
@@ -157,61 +154,43 @@ async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
         try:
             genai.configure(api_key=os.environ["GEMINI_API_KEY"])
             task_type = "retrieval_query" if len(texts) == 1 else "retrieval_document"
-            # Using embed_content for batching efficiency
             result = await genai.embed_content_async(
                 model="models/embedding-001",
                 content=texts,
                 task_type=task_type
             )
-            # The result for a batch is in 'embedding', which is a list of lists.
             return np.array(result['embedding'])
         except Exception as e:
             log.error(f"FATAL ERROR in Gemini Embedding API call: {e}", exc_info=True)
-            # Re-raise the exception
             raise
 
-# --- Patched RAG System for Correct Caching ---
-class PatchedLightRAG(LightRAG):
-    async def aquery(self, query: str, param: QueryParam = QueryParam(), system_prompt: str | None = None) -> str | asyncio.StreamReader:
-        original_hasher = operate.compute_args_hash
-        def patched_hasher(*args, **kwargs):
-            return original_hasher(*args, param.stream, **kwargs)
-
-        operate.compute_args_hash = patched_hasher
-        try:
-            result = await super().aquery(query, param, system_prompt)
-        finally:
-            operate.compute_args_hash = original_hasher
-        return result
-
 # --- RAG System Initialization ---
+# The PatchedLightRAG class is no longer needed as we are not changing query behavior.
 async def initialize_rag_system() -> LightRAG:
-    log.info("Initializing LightRAG with Gemini, Neo4j, and cache patch...")
+    log.info("Initializing LightRAG with Gemini and Neo4j...")
     if not os.path.exists(WORKING_DIR):
         os.makedirs(WORKING_DIR)
 
     tokenizer_path = os.path.join(WORKING_DIR, "gemma_tokenizer")
     custom_tokenizer = GemmaTokenizer(tokenizer_dir=tokenizer_path)
 
-    # Fetch concurrency settings from environment variables, with safe defaults.
     max_async_calls = int(os.getenv("MAX_ASYNC", 1))
     max_parallel_files = int(os.getenv("MAX_PARALLEL_INSERT", 1))
 
     log.info(f"Configuring LightRAG with MAX_ASYNC={max_async_calls} and MAX_PARALLEL_INSERT={max_parallel_files}")
 
-    rag = PatchedLightRAG(
+    rag = LightRAG(
         working_dir=WORKING_DIR,
         graph_storage="Neo4JStorage",
         llm_model_func=gemini_llm_func,
         embedding_func=EmbeddingFunc(
             embedding_dim=768,
-            max_token_size=2048, # The embedding model has a 2048 token limit
+            max_token_size=2048,
             func=gemini_embedding_func,
         ),
         tokenizer=custom_tokenizer,
         enable_llm_cache=True,
         enable_llm_cache_for_entity_extract=True,
-        # Set the concurrency parameters fetched from the environment
         llm_model_max_async=max_async_calls,
         max_parallel_insert=max_parallel_files
     )
@@ -221,13 +200,34 @@ async def initialize_rag_system() -> LightRAG:
     log.info("LightRAG system initialized successfully.")
     return rag
 
-# --- Document Processing with Batching and Fail-Fast Error Handling ---
+# --- Helper for Cache Key Generation ---
+def _get_extraction_prompt_template(rag_instance: LightRAG) -> str:
+    """Reconstructs the exact prompt template used for extraction."""
+    # This logic is derived from lightrag.operate.extract_entities
+    addon_params = rag_instance.addon_params
+    language = addon_params.get("language", prompt_template_module.PROMPTS["DEFAULT_LANGUAGE"])
+    entity_types = addon_params.get("entity_types", prompt_template_module.PROMPTS["DEFAULT_ENTITY_TYPES"])
+    examples = "\n".join(prompt_template_module.PROMPTS["entity_extraction_examples"])
+
+    context_base = dict(
+        tuple_delimiter=prompt_template_module.PROMPTS["DEFAULT_TUPLE_DELIMITER"],
+        record_delimiter=prompt_template_module.PROMPTS["DEFAULT_RECORD_DELIMITER"],
+        completion_delimiter=prompt_template_module.PROMPTS["DEFAULT_COMPLETION_DELIMITER"],
+        entity_types=", ".join(entity_types),
+        language=language,
+    )
+    examples = examples.format(**context_base)
+    
+    context_base["examples"] = examples
+    return prompt_template_module.PROMPTS["entity_extraction"].format(**context_base, input_text="{input_text}")
+
+# --- NEW: Resumable Document Processing ---
 async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
     """
-    Finds and ingests markdown files in batches. Skips already processed files,
-    retries failed files, and stops the entire process on any unrecoverable error.
+    Finds and ingests markdown files with chunk-level resume capability.
+    It pre-chunks files and checks the LLM cache to only process necessary chunks.
     """
-    log.info(f"Starting ingestion process for directory '{data_directory}'...")
+    log.info(f"Starting resumable ingestion process for directory '{data_directory}'...")
     data_path = Path(data_directory)
     all_files = list(data_path.rglob("*.md"))
     
@@ -236,9 +236,10 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
         return
 
     log.info(f"Found {len(all_files)} markdown files to check.")
+    
+    extraction_prompt_template = _get_extraction_prompt_template(rag_instance)
 
     try:
-        # 1. Determine which files actually need processing
         all_doc_ids = [str(file_path) for file_path in all_files]
         existing_statuses = await rag_instance.aget_docs_by_ids(all_doc_ids)
 
@@ -247,58 +248,93 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
             doc_id = str(file_path)
             status_obj = existing_statuses.get(doc_id)
             if status_obj and status_obj.get('status') == DocStatus.PROCESSED.value:
-                log.info(f"SKIPPED: Document '{file_path.name}' is already processed.")
+                log.info(f"SKIPPED: Document '{file_path.name}' is already fully processed.")
             else:
-                if status_obj and status_obj.get('status') == DocStatus.FAILED.value:
-                    error_reason = status_obj.get('error', 'Unknown error')
-                    log.warning(f"RETRYING: Document '{file_path.name}' previously failed. Reason: {error_reason}")
                 files_to_process.append(file_path)
 
         if not files_to_process:
-            log.info("All found documents are already processed. Ingestion finished.")
+            log.info("All documents are already processed. Ingestion finished.")
             return
-        
-        # 2. Process the necessary files in batches
-        batch_size = rag_instance.max_parallel_insert
-        log.info(f"Processing {len(files_to_process)} new/failed files in batches of {batch_size}.")
 
-        for i in range(0, len(files_to_process), batch_size):
-            current_batch_paths = files_to_process[i:i + batch_size]
-            log.info(f"--- Starting Batch {i//batch_size + 1} ({len(current_batch_paths)} files) ---")
-
-            contents_to_process = []
-            file_paths_to_process = []
-            doc_ids_to_process = []
-            for file_path in current_batch_paths:
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                    if content.strip():
-                        contents_to_process.append(content)
-                        file_paths_to_process.append(file_path.name)
-                        doc_ids_to_process.append(str(file_path))
-                    else:
-                        log.warning(f"SKIPPED in batch: File '{file_path.name}' is empty.")
-                except Exception as e:
-                    log.error(f"FAILED TO READ in batch: Could not read file '{file_path.name}'. Reason: {e}")
+        for file_path in files_to_process:
+            log.info(f"--- Analyzing file for processing: '{file_path.name}' ---")
             
-            if not contents_to_process:
-                log.warning(f"Batch {i//batch_size + 1} has no valid files to process. Skipping.")
-                continue
+            try:
+                # 1. Read and chunk the file locally first
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                
+                if not content.strip():
+                    log.warning(f"File '{file_path.name}' is empty. Skipping.")
+                    continue
 
-            # Enqueue and process the current batch
-            await rag_instance.apipeline_enqueue_documents(
-                input=contents_to_process,
-                file_paths=file_paths_to_process,
-                ids=doc_ids_to_process
-            )
-            await rag_instance.apipeline_process_enqueue_documents()
-            log.info(f"--- Finished Batch {i//batch_size + 1} ---")
+                all_chunks = rag_instance.chunking_func(
+                    rag_instance.tokenizer,
+                    content,
+                    None,
+                    False,
+                    rag_instance.chunk_overlap_token_size,
+                    rag_instance.chunk_token_size,
+                )
+                
+                total_chunks = len(all_chunks)
+                log.info(f"File '{file_path.name}' has {total_chunks} total chunks.")
 
-        log.info("All batches processed successfully.")
+                # 2. Check each chunk against the cache
+                chunks_to_process_content = []
+                cached_chunk_count = 0
+                for i, chunk in enumerate(all_chunks):
+                    chunk_content = chunk['content']
+                    # Replicate the prompt LightRAG uses to create the cache key
+                    full_prompt_for_chunk = extraction_prompt_template.format(input_text=chunk_content)
+                    cache_key = compute_args_hash(full_prompt_for_chunk)
+                    
+                    # Check the cache for the 'default' mode (used for extraction)
+                    is_cached = await rag_instance.llm_response_cache.get_by_id(f"default_{cache_key}")
+                    if is_cached:
+                        cached_chunk_count += 1
+                    else:
+                        chunks_to_process_content.append(chunk_content)
+
+                log.info(f"Cache check for '{file_path.name}': {cached_chunk_count} of {total_chunks} chunks are already cached.")
+
+                # 3. Process only the chunks that are not cached
+                if chunks_to_process_content:
+                    log.info(f"Enqueuing {len(chunks_to_process_content)} new chunks for processing...")
+                    # Treat each unprocessed chunk as a mini-document for ingestion
+                    # Use the original file_path for all chunks for correct citation.
+                    await rag_instance.apipeline_enqueue_documents(
+                        input=chunks_to_process_content,
+                        file_paths=[file_path.name] * len(chunks_to_process_content)
+                    )
+                    await rag_instance.apipeline_process_enqueue_documents()
+                
+                # 4. Mark the parent document as PROCESSED
+                # This is crucial to prevent re-checking it on the next run.
+                log.info(f"Marking master document '{file_path.name}' as PROCESSED.")
+                await rag_instance.doc_status.upsert({
+                    str(file_path): {
+                        "status": DocStatus.PROCESSED,
+                        "content": content,
+                        "content_summary": content[:250] + "...",
+                        "content_length": len(content),
+                        "created_at": datetime.now(timezone.utc).isoformat(),
+                        "updated_at": datetime.now(timezone.utc).isoformat(),
+                        "file_path": file_path.name,
+                        "chunks_count": total_chunks,
+                    }
+                })
+                log.info(f"--- Finished processing for file: '{file_path.name}' ---")
+
+            except Exception as file_error:
+                log.error(f"Failed to process file '{file_path.name}'. Error: {file_error}", exc_info=True)
+                # Mark this specific file as FAILED and continue to the next
+                await rag_instance.doc_status.upsert({
+                    str(file_path): { "status": DocStatus.FAILED, "error": str(file_error) }
+                })
+
+        log.info("All files have been analyzed and processed. Ingestion cycle complete.")
 
     except Exception as e:
-        # This is the "fail-fast" logic. Any unhandled exception from the pipeline will be caught here.
-        log.error(f"A critical error occurred during the ingestion pipeline, and the process has been stopped. Reason: {e}", exc_info=True)
-        # We explicitly stop here by returning. The background task will terminate.
+        log.error(f"A critical error occurred during the ingestion pipeline. Reason: {e}", exc_info=True)
         return

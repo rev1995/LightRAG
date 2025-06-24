@@ -16,10 +16,11 @@ load_dotenv()
 
 # Ensure the logger is configured
 from lightrag.utils import setup_logger, EmbeddingFunc, Tokenizer, compute_args_hash
-from lightrag import LightRAG, QueryParam
+from lightrag import LightRAG
 from lightrag.kg.shared_storage import initialize_pipeline_status
 from lightrag.base import DocStatus
 from lightrag import operate
+# Import the prompt module to access templates directly
 from lightrag import prompt as prompt_template_module
 
 # --- Dependency Imports ---
@@ -38,7 +39,7 @@ WORKING_DIR = "./rag_gemini_neo4j_storage"
 # The directory containing your files
 DATA_DIR = "./data"
 
-# --- Rate Limiting for Gemini API (Good practice, especially for embeddings) ---
+# --- Rate Limiting for Gemini API ---
 embedding_qpm_limiter = AsyncLimiter(1500, 60)
 
 # --- Custom Tokenizer (avoids tiktoken dependency) ---
@@ -165,7 +166,6 @@ async def gemini_embedding_func(texts: list[str]) -> np.ndarray:
             raise
 
 # --- RAG System Initialization ---
-# The PatchedLightRAG class is no longer needed as we are not changing query behavior.
 async def initialize_rag_system() -> LightRAG:
     log.info("Initializing LightRAG with Gemini and Neo4j...")
     if not os.path.exists(WORKING_DIR):
@@ -201,27 +201,36 @@ async def initialize_rag_system() -> LightRAG:
     return rag
 
 # --- Helper for Cache Key Generation ---
-def _get_extraction_prompt_template(rag_instance: LightRAG) -> str:
-    """Reconstructs the exact prompt template used for extraction."""
-    # This logic is derived from lightrag.operate.extract_entities
+def _get_extraction_prompt_for_chunk(rag_instance: LightRAG, chunk_content: str) -> str:
+    """
+    Meticulously reconstructs the exact prompt string that LightRAG uses for entity extraction.
+    This is critical for generating the correct cache key.
+    This logic is directly adapted from `lightrag.operate.extract_entities`.
+    """
+    prompts = prompt_template_module.PROMPTS
     addon_params = rag_instance.addon_params
-    language = addon_params.get("language", prompt_template_module.PROMPTS["DEFAULT_LANGUAGE"])
-    entity_types = addon_params.get("entity_types", prompt_template_module.PROMPTS["DEFAULT_ENTITY_TYPES"])
-    examples = "\n".join(prompt_template_module.PROMPTS["entity_extraction_examples"])
+    language = addon_params.get("language", prompts["DEFAULT_LANGUAGE"])
+    entity_types = addon_params.get("entity_types", prompts["DEFAULT_ENTITY_TYPES"])
+    examples = "\n".join(prompts["entity_extraction_examples"])
 
     context_base = dict(
-        tuple_delimiter=prompt_template_module.PROMPTS["DEFAULT_TUPLE_DELIMITER"],
-        record_delimiter=prompt_template_module.PROMPTS["DEFAULT_RECORD_DELIMITER"],
-        completion_delimiter=prompt_template_module.PROMPTS["DEFAULT_COMPLETION_DELIMITER"],
+        tuple_delimiter=prompts["DEFAULT_TUPLE_DELIMITER"],
+        record_delimiter=prompts["DEFAULT_RECORD_DELIMITER"],
+        completion_delimiter=prompts["DEFAULT_COMPLETION_DELIMITER"],
         entity_types=", ".join(entity_types),
         language=language,
     )
     examples = examples.format(**context_base)
-    
-    context_base["examples"] = examples
-    return prompt_template_module.PROMPTS["entity_extraction"].format(**context_base, input_text="{input_text}")
 
-# --- NEW: Resumable Document Processing ---
+    final_context = dict(
+        **context_base,
+        examples=examples,
+        input_text=chunk_content
+    )
+    
+    return prompts["entity_extraction"].format(**final_context)
+
+# --- CORRECTED: Resumable Document Processing ---
 async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
     """
     Finds and ingests markdown files with chunk-level resume capability.
@@ -237,8 +246,6 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
 
     log.info(f"Found {len(all_files)} markdown files to check.")
     
-    extraction_prompt_template = _get_extraction_prompt_template(rag_instance)
-
     try:
         all_doc_ids = [str(file_path) for file_path in all_files]
         existing_statuses = await rag_instance.aget_docs_by_ids(all_doc_ids)
@@ -256,11 +263,12 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
             log.info("All documents are already processed. Ingestion finished.")
             return
 
+        extraction_cache = await rag_instance.llm_response_cache.get_by_id("default") or {}
+
         for file_path in files_to_process:
             log.info(f"--- Analyzing file for processing: '{file_path.name}' ---")
             
             try:
-                # 1. Read and chunk the file locally first
                 with open(file_path, 'r', encoding='utf-8') as f:
                     content = f.read()
                 
@@ -280,42 +288,34 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
                 total_chunks = len(all_chunks)
                 log.info(f"File '{file_path.name}' has {total_chunks} total chunks.")
 
-                # 2. Check each chunk against the cache
                 chunks_to_process_content = []
-                cached_chunk_count = 0
                 for i, chunk in enumerate(all_chunks):
                     chunk_content = chunk['content']
-                    # Replicate the prompt LightRAG uses to create the cache key
-                    full_prompt_for_chunk = extraction_prompt_template.format(input_text=chunk_content)
+                    full_prompt_for_chunk = _get_extraction_prompt_for_chunk(rag_instance, chunk_content)
                     cache_key = compute_args_hash(full_prompt_for_chunk)
                     
-                    # Check the cache for the 'default' mode (used for extraction)
-                    is_cached = await rag_instance.llm_response_cache.get_by_id(f"default_{cache_key}")
-                    if is_cached:
-                        cached_chunk_count += 1
-                    else:
+                    if cache_key not in extraction_cache:
                         chunks_to_process_content.append(chunk_content)
 
+                cached_chunk_count = total_chunks - len(chunks_to_process_content)
                 log.info(f"Cache check for '{file_path.name}': {cached_chunk_count} of {total_chunks} chunks are already cached.")
 
-                # 3. Process only the chunks that are not cached
                 if chunks_to_process_content:
                     log.info(f"Enqueuing {len(chunks_to_process_content)} new chunks for processing...")
-                    # Treat each unprocessed chunk as a mini-document for ingestion
-                    # Use the original file_path for all chunks for correct citation.
+                    # THE FIX: By setting `ids=None`, we let LightRAG generate a unique
+                    # hash ID for each chunk's content, preventing the "IDs must be unique" error.
                     await rag_instance.apipeline_enqueue_documents(
                         input=chunks_to_process_content,
-                        file_paths=[file_path.name] * len(chunks_to_process_content)
+                        file_paths=[file_path.name] * len(chunks_to_process_content),
+                        ids=None # Let LightRAG auto-generate unique IDs for each chunk.
                     )
                     await rag_instance.apipeline_process_enqueue_documents()
                 
-                # 4. Mark the parent document as PROCESSED
-                # This is crucial to prevent re-checking it on the next run.
                 log.info(f"Marking master document '{file_path.name}' as PROCESSED.")
                 await rag_instance.doc_status.upsert({
                     str(file_path): {
                         "status": DocStatus.PROCESSED,
-                        "content": content,
+                        "content": content[:5000], # Store a snippet to avoid huge DB records
                         "content_summary": content[:250] + "...",
                         "content_length": len(content),
                         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -328,7 +328,6 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
 
             except Exception as file_error:
                 log.error(f"Failed to process file '{file_path.name}'. Error: {file_error}", exc_info=True)
-                # Mark this specific file as FAILED and continue to the next
                 await rag_instance.doc_status.upsert({
                     str(file_path): { "status": DocStatus.FAILED, "error": str(file_error) }
                 })
@@ -338,3 +337,4 @@ async def process_markdown_files(rag_instance: LightRAG, data_directory: str):
     except Exception as e:
         log.error(f"A critical error occurred during the ingestion pipeline. Reason: {e}", exc_info=True)
         return
+    

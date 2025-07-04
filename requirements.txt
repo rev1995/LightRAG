@@ -18,5 +18,14 @@ setuptools
 tenacity
 
 # LLM packages
-tiktoken
 xlsxwriter>=3.1.0
+
+flask 
+streamlit 
+google-generativeai 
+sentence-transformers 
+sentencepiece 
+PyMuPDF 
+python-dotenv 
+aiolimiter 
+requests

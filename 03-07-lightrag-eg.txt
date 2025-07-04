@@ -1,0 +1,3319 @@
+Directory structure:
+└── examples/
+    ├── graph_visual_with_html.py
+    ├── graph_visual_with_neo4j.py
+    ├── insert_custom_kg.py
+    ├── lightrag_azure_openai_demo.py
+    ├── lightrag_gemini_demo.py
+    ├── lightrag_gemini_demo_no_tiktoken.py
+    ├── lightrag_gemini_track_token_demo.py
+    ├── lightrag_ollama_demo.py
+    ├── lightrag_openai_compatible_demo.py
+    ├── lightrag_openai_demo.py
+    ├── lightrag_openai_mongodb_graph_demo.py
+    ├── modalprocessors_example.py
+    ├── raganything_example.py
+    └── unofficial-sample/
+        ├── copy_llm_cache_to_another_storage.py
+        ├── lightrag_bedrock_demo.py
+        ├── lightrag_hf_demo.py
+        ├── lightrag_llamaindex_direct_demo.py
+        ├── lightrag_llamaindex_litellm_demo.py
+        ├── lightrag_llamaindex_litellm_opik_demo.py
+        ├── lightrag_lmdeploy_demo.py
+        ├── lightrag_nvidia_demo.py
+        └── lightrag_openai_neo4j_milvus_redis_demo.py
+
+================================================
+FILE: examples/graph_visual_with_html.py
+================================================
+import pipmaster as pm
+
+if not pm.is_installed("pyvis"):
+    pm.install("pyvis")
+if not pm.is_installed("networkx"):
+    pm.install("networkx")
+
+import networkx as nx
+from pyvis.network import Network
+import random
+
+# Load the GraphML file
+G = nx.read_graphml("./dickens/graph_chunk_entity_relation.graphml")
+
+# Create a Pyvis network
+net = Network(height="100vh", notebook=True)
+
+# Convert NetworkX graph to Pyvis network
+net.from_nx(G)
+
+
+# Add colors and title to nodes
+for node in net.nodes:
+    node["color"] = "#{:06x}".format(random.randint(0, 0xFFFFFF))
+    if "description" in node:
+        node["title"] = node["description"]
+
+# Add title to edges
+for edge in net.edges:
+    if "description" in edge:
+        edge["title"] = edge["description"]
+
+# Save and display the network
+net.show("knowledge_graph.html")
+
+
+
+================================================
+FILE: examples/graph_visual_with_neo4j.py
+================================================
+import os
+import json
+import xml.etree.ElementTree as ET
+from neo4j import GraphDatabase
+
+# Constants
+WORKING_DIR = "./dickens"
+BATCH_SIZE_NODES = 500
+BATCH_SIZE_EDGES = 100
+
+# Neo4j connection credentials
+NEO4J_URI = "bolt://localhost:7687"
+NEO4J_USERNAME = "neo4j"
+NEO4J_PASSWORD = "your_password"
+
+
+def xml_to_json(xml_file):
+    try:
+        tree = ET.parse(xml_file)
+        root = tree.getroot()
+
+        # Print the root element's tag and attributes to confirm the file has been correctly loaded
+        print(f"Root element: {root.tag}")
+        print(f"Root attributes: {root.attrib}")
+
+        data = {"nodes": [], "edges": []}
+
+        # Use namespace
+        namespace = {"": "http://graphml.graphdrawing.org/xmlns"}
+
+        for node in root.findall(".//node", namespace):
+            node_data = {
+                "id": node.get("id").strip('"'),
+                "entity_type": node.find("./data[@key='d1']", namespace).text.strip('"')
+                if node.find("./data[@key='d1']", namespace) is not None
+                else "",
+                "description": node.find("./data[@key='d2']", namespace).text
+                if node.find("./data[@key='d2']", namespace) is not None
+                else "",
+                "source_id": node.find("./data[@key='d3']", namespace).text
+                if node.find("./data[@key='d3']", namespace) is not None
+                else "",
+            }
+            data["nodes"].append(node_data)
+
+        for edge in root.findall(".//edge", namespace):
+            edge_data = {
+                "source": edge.get("source").strip('"'),
+                "target": edge.get("target").strip('"'),
+                "weight": float(edge.find("./data[@key='d5']", namespace).text)
+                if edge.find("./data[@key='d5']", namespace) is not None
+                else 0.0,
+                "description": edge.find("./data[@key='d6']", namespace).text
+                if edge.find("./data[@key='d6']", namespace) is not None
+                else "",
+                "keywords": edge.find("./data[@key='d7']", namespace).text
+                if edge.find("./data[@key='d7']", namespace) is not None
+                else "",
+                "source_id": edge.find("./data[@key='d8']", namespace).text
+                if edge.find("./data[@key='d8']", namespace) is not None
+                else "",
+            }
+            data["edges"].append(edge_data)
+
+        # Print the number of nodes and edges found
+        print(f"Found {len(data['nodes'])} nodes and {len(data['edges'])} edges")
+
+        return data
+    except ET.ParseError as e:
+        print(f"Error parsing XML file: {e}")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+
+
+def convert_xml_to_json(xml_path, output_path):
+    """Converts XML file to JSON and saves the output."""
+    if not os.path.exists(xml_path):
+        print(f"Error: File not found - {xml_path}")
+        return None
+
+    json_data = xml_to_json(xml_path)
+    if json_data:
+        with open(output_path, "w", encoding="utf-8") as f:
+            json.dump(json_data, f, ensure_ascii=False, indent=2)
+        print(f"JSON file created: {output_path}")
+        return json_data
+    else:
+        print("Failed to create JSON data")
+        return None
+
+
+def process_in_batches(tx, query, data, batch_size):
+    """Process data in batches and execute the given query."""
+    for i in range(0, len(data), batch_size):
+        batch = data[i : i + batch_size]
+        tx.run(query, {"nodes": batch} if "nodes" in query else {"edges": batch})
+
+
+def main():
+    # Paths
+    xml_file = os.path.join(WORKING_DIR, "graph_chunk_entity_relation.graphml")
+    json_file = os.path.join(WORKING_DIR, "graph_data.json")
+
+    # Convert XML to JSON
+    json_data = convert_xml_to_json(xml_file, json_file)
+    if json_data is None:
+        return
+
+    # Load nodes and edges
+    nodes = json_data.get("nodes", [])
+    edges = json_data.get("edges", [])
+
+    # Neo4j queries
+    create_nodes_query = """
+    UNWIND $nodes AS node
+    MERGE (e:Entity {id: node.id})
+    SET e.entity_type = node.entity_type,
+        e.description = node.description,
+        e.source_id = node.source_id,
+        e.displayName = node.id
+    REMOVE e:Entity
+    WITH e, node
+    CALL apoc.create.addLabels(e, [node.id]) YIELD node AS labeledNode
+    RETURN count(*)
+    """
+
+    create_edges_query = """
+    UNWIND $edges AS edge
+    MATCH (source {id: edge.source})
+    MATCH (target {id: edge.target})
+    WITH source, target, edge,
+         CASE
+            WHEN edge.keywords CONTAINS 'lead' THEN 'lead'
+            WHEN edge.keywords CONTAINS 'participate' THEN 'participate'
+            WHEN edge.keywords CONTAINS 'uses' THEN 'uses'
+            WHEN edge.keywords CONTAINS 'located' THEN 'located'
+            WHEN edge.keywords CONTAINS 'occurs' THEN 'occurs'
+           ELSE REPLACE(SPLIT(edge.keywords, ',')[0], '\"', '')
+         END AS relType
+    CALL apoc.create.relationship(source, relType, {
+      weight: edge.weight,
+      description: edge.description,
+      keywords: edge.keywords,
+      source_id: edge.source_id
+    }, target) YIELD rel
+    RETURN count(*)
+    """
+
+    set_displayname_and_labels_query = """
+    MATCH (n)
+    SET n.displayName = n.id
+    WITH n
+    CALL apoc.create.setLabels(n, [n.entity_type]) YIELD node
+    RETURN count(*)
+    """
+
+    # Create a Neo4j driver
+    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+
+    try:
+        # Execute queries in batches
+        with driver.session() as session:
+            # Insert nodes in batches
+            session.execute_write(
+                process_in_batches, create_nodes_query, nodes, BATCH_SIZE_NODES
+            )
+
+            # Insert edges in batches
+            session.execute_write(
+                process_in_batches, create_edges_query, edges, BATCH_SIZE_EDGES
+            )
+
+            # Set displayName and labels
+            session.run(set_displayname_and_labels_query)
+
+    except Exception as e:
+        print(f"Error occurred: {e}")
+
+    finally:
+        driver.close()
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/insert_custom_kg.py
+================================================
+import os
+from lightrag import LightRAG
+from lightrag.llm.openai import gpt_4o_mini_complete
+#########
+# Uncomment the below two lines if running in a jupyter notebook to handle the async nature of rag.insert()
+# import nest_asyncio
+# nest_asyncio.apply()
+#########
+
+WORKING_DIR = "./custom_kg"
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+rag = LightRAG(
+    working_dir=WORKING_DIR,
+    llm_model_func=gpt_4o_mini_complete,  # Use gpt_4o_mini_complete LLM model
+    # llm_model_func=gpt_4o_complete  # Optionally, use a stronger model
+)
+
+custom_kg = {
+    "entities": [
+        {
+            "entity_name": "CompanyA",
+            "entity_type": "Organization",
+            "description": "A major technology company",
+            "source_id": "Source1",
+        },
+        {
+            "entity_name": "ProductX",
+            "entity_type": "Product",
+            "description": "A popular product developed by CompanyA",
+            "source_id": "Source1",
+        },
+        {
+            "entity_name": "PersonA",
+            "entity_type": "Person",
+            "description": "A renowned researcher in AI",
+            "source_id": "Source2",
+        },
+        {
+            "entity_name": "UniversityB",
+            "entity_type": "Organization",
+            "description": "A leading university specializing in technology and sciences",
+            "source_id": "Source2",
+        },
+        {
+            "entity_name": "CityC",
+            "entity_type": "Location",
+            "description": "A large metropolitan city known for its culture and economy",
+            "source_id": "Source3",
+        },
+        {
+            "entity_name": "EventY",
+            "entity_type": "Event",
+            "description": "An annual technology conference held in CityC",
+            "source_id": "Source3",
+        },
+    ],
+    "relationships": [
+        {
+            "src_id": "CompanyA",
+            "tgt_id": "ProductX",
+            "description": "CompanyA develops ProductX",
+            "keywords": "develop, produce",
+            "weight": 1.0,
+            "source_id": "Source1",
+        },
+        {
+            "src_id": "PersonA",
+            "tgt_id": "UniversityB",
+            "description": "PersonA works at UniversityB",
+            "keywords": "employment, affiliation",
+            "weight": 0.9,
+            "source_id": "Source2",
+        },
+        {
+            "src_id": "CityC",
+            "tgt_id": "EventY",
+            "description": "EventY is hosted in CityC",
+            "keywords": "host, location",
+            "weight": 0.8,
+            "source_id": "Source3",
+        },
+    ],
+    "chunks": [
+        {
+            "content": "ProductX, developed by CompanyA, has revolutionized the market with its cutting-edge features.",
+            "source_id": "Source1",
+            "source_chunk_index": 0,
+        },
+        {
+            "content": "One outstanding feature of ProductX is its advanced AI capabilities.",
+            "source_id": "Source1",
+            "chunk_order_index": 1,
+        },
+        {
+            "content": "PersonA is a prominent researcher at UniversityB, focusing on artificial intelligence and machine learning.",
+            "source_id": "Source2",
+            "source_chunk_index": 0,
+        },
+        {
+            "content": "EventY, held in CityC, attracts technology enthusiasts and companies from around the globe.",
+            "source_id": "Source3",
+            "source_chunk_index": 0,
+        },
+        {
+            "content": "None",
+            "source_id": "UNKNOWN",
+            "source_chunk_index": 0,
+        },
+    ],
+}
+
+rag.insert_custom_kg(custom_kg)
+
+
+
+================================================
+FILE: examples/lightrag_azure_openai_demo.py
+================================================
+import os
+import asyncio
+from lightrag import LightRAG, QueryParam
+from lightrag.utils import EmbeddingFunc
+import numpy as np
+from dotenv import load_dotenv
+import logging
+from openai import AzureOpenAI
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+logging.basicConfig(level=logging.INFO)
+
+load_dotenv()
+
+AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION")
+AZURE_OPENAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+AZURE_OPENAI_API_KEY = os.getenv("AZURE_OPENAI_API_KEY")
+AZURE_OPENAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+
+AZURE_EMBEDDING_DEPLOYMENT = os.getenv("AZURE_EMBEDDING_DEPLOYMENT")
+AZURE_EMBEDDING_API_VERSION = os.getenv("AZURE_EMBEDDING_API_VERSION")
+
+WORKING_DIR = "./dickens"
+
+if os.path.exists(WORKING_DIR):
+    import shutil
+
+    shutil.rmtree(WORKING_DIR)
+
+os.mkdir(WORKING_DIR)
+
+
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    client = AzureOpenAI(
+        api_key=AZURE_OPENAI_API_KEY,
+        api_version=AZURE_OPENAI_API_VERSION,
+        azure_endpoint=AZURE_OPENAI_ENDPOINT,
+    )
+
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    if history_messages:
+        messages.extend(history_messages)
+    messages.append({"role": "user", "content": prompt})
+
+    chat_completion = client.chat.completions.create(
+        model=AZURE_OPENAI_DEPLOYMENT,  # model = "deployment_name".
+        messages=messages,
+        temperature=kwargs.get("temperature", 0),
+        top_p=kwargs.get("top_p", 1),
+        n=kwargs.get("n", 1),
+    )
+    return chat_completion.choices[0].message.content
+
+
+async def embedding_func(texts: list[str]) -> np.ndarray:
+    client = AzureOpenAI(
+        api_key=AZURE_OPENAI_API_KEY,
+        api_version=AZURE_EMBEDDING_API_VERSION,
+        azure_endpoint=AZURE_OPENAI_ENDPOINT,
+    )
+    embedding = client.embeddings.create(model=AZURE_EMBEDDING_DEPLOYMENT, input=texts)
+
+    embeddings = [item.embedding for item in embedding.data]
+    return np.array(embeddings)
+
+
+async def test_funcs():
+    result = await llm_model_func("How are you?")
+    print("Resposta do llm_model_func: ", result)
+
+    result = await embedding_func(["How are you?"])
+    print("Resultado do embedding_func: ", result.shape)
+    print("Dimensão da embedding: ", result.shape[1])
+
+
+asyncio.run(test_funcs())
+
+embedding_dimension = 3072
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=embedding_dimension,
+            max_token_size=8192,
+            func=embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    rag = asyncio.run(initialize_rag())
+
+    book1 = open("./book_1.txt", encoding="utf-8")
+    book2 = open("./book_2.txt", encoding="utf-8")
+
+    rag.insert([book1.read(), book2.read()])
+
+    query_text = "What are the main themes?"
+
+    print("Result (Naive):")
+    print(rag.query(query_text, param=QueryParam(mode="naive")))
+
+    print("\nResult (Local):")
+    print(rag.query(query_text, param=QueryParam(mode="local")))
+
+    print("\nResult (Global):")
+    print(rag.query(query_text, param=QueryParam(mode="global")))
+
+    print("\nResult (Hybrid):")
+    print(rag.query(query_text, param=QueryParam(mode="hybrid")))
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/lightrag_gemini_demo.py
+================================================
+# pip install -q -U google-genai to use gemini as a client
+
+import os
+import numpy as np
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
+from lightrag.utils import EmbeddingFunc
+from lightrag import LightRAG, QueryParam
+from sentence_transformers import SentenceTransformer
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+import asyncio
+import nest_asyncio
+
+# Apply nest_asyncio to solve event loop issues
+nest_asyncio.apply()
+
+load_dotenv()
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+
+WORKING_DIR = "./dickens"
+
+if os.path.exists(WORKING_DIR):
+    import shutil
+
+    shutil.rmtree(WORKING_DIR)
+
+os.mkdir(WORKING_DIR)
+
+
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    # 1. Initialize the GenAI Client with your Gemini API Key
+    client = genai.Client(api_key=gemini_api_key)
+
+    # 2. Combine prompts: system prompt, history, and user prompt
+    if history_messages is None:
+        history_messages = []
+
+    combined_prompt = ""
+    if system_prompt:
+        combined_prompt += f"{system_prompt}\n"
+
+    for msg in history_messages:
+        # Each msg is expected to be a dict: {"role": "...", "content": "..."}
+        combined_prompt += f"{msg['role']}: {msg['content']}\n"
+
+    # Finally, add the new user prompt
+    combined_prompt += f"user: {prompt}"
+
+    # 3. Call the Gemini model
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=[combined_prompt],
+        config=types.GenerateContentConfig(max_output_tokens=500, temperature=0.1),
+    )
+
+    # 4. Return the response text
+    return response.text
+
+
+async def embedding_func(texts: list[str]) -> np.ndarray:
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    embeddings = model.encode(texts, convert_to_numpy=True)
+    return embeddings
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=384,
+            max_token_size=8192,
+            func=embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+    file_path = "story.txt"
+    with open(file_path, "r") as file:
+        text = file.read()
+
+    rag.insert(text)
+
+    response = rag.query(
+        query="What is the main theme of the story?",
+        param=QueryParam(mode="hybrid", top_k=5, response_type="single line"),
+    )
+
+    print(response)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/lightrag_gemini_demo_no_tiktoken.py
+================================================
+# pip install -q -U google-genai to use gemini as a client
+
+import os
+from typing import Optional
+import dataclasses
+from pathlib import Path
+import hashlib
+import numpy as np
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
+from lightrag.utils import EmbeddingFunc, Tokenizer
+from lightrag import LightRAG, QueryParam
+from sentence_transformers import SentenceTransformer
+from lightrag.kg.shared_storage import initialize_pipeline_status
+import sentencepiece as spm
+import requests
+
+import asyncio
+import nest_asyncio
+
+# Apply nest_asyncio to solve event loop issues
+nest_asyncio.apply()
+
+load_dotenv()
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+
+WORKING_DIR = "./dickens"
+
+if os.path.exists(WORKING_DIR):
+    import shutil
+
+    shutil.rmtree(WORKING_DIR)
+
+os.mkdir(WORKING_DIR)
+
+
+class GemmaTokenizer(Tokenizer):
+    # adapted from google-cloud-aiplatform[tokenization]
+
+    @dataclasses.dataclass(frozen=True)
+    class _TokenizerConfig:
+        tokenizer_model_url: str
+        tokenizer_model_hash: str
+
+    _TOKENIZERS = {
+        "google/gemma2": _TokenizerConfig(
+            tokenizer_model_url="https://raw.githubusercontent.com/google/gemma_pytorch/33b652c465537c6158f9a472ea5700e5e770ad3f/tokenizer/tokenizer.model",
+            tokenizer_model_hash="61a7b147390c64585d6c3543dd6fc636906c9af3865a5548f27f31aee1d4c8e2",
+        ),
+        "google/gemma3": _TokenizerConfig(
+            tokenizer_model_url="https://raw.githubusercontent.com/google/gemma_pytorch/cb7c0152a369e43908e769eb09e1ce6043afe084/tokenizer/gemma3_cleaned_262144_v2.spiece.model",
+            tokenizer_model_hash="1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c",
+        ),
+    }
+
+    def __init__(
+        self, model_name: str = "gemini-2.0-flash", tokenizer_dir: Optional[str] = None
+    ):
+        # https://github.com/google/gemma_pytorch/tree/main/tokenizer
+        if "1.5" in model_name or "1.0" in model_name:
+            # up to gemini 1.5 gemma2 is a comparable local tokenizer
+            # https://github.com/googleapis/python-aiplatform/blob/main/vertexai/tokenization/_tokenizer_loading.py
+            tokenizer_name = "google/gemma2"
+        else:
+            # for gemini > 2.0 gemma3 was used
+            tokenizer_name = "google/gemma3"
+
+        file_url = self._TOKENIZERS[tokenizer_name].tokenizer_model_url
+        tokenizer_model_name = file_url.rsplit("/", 1)[1]
+        expected_hash = self._TOKENIZERS[tokenizer_name].tokenizer_model_hash
+
+        tokenizer_dir = Path(tokenizer_dir)
+        if tokenizer_dir.is_dir():
+            file_path = tokenizer_dir / tokenizer_model_name
+            model_data = self._maybe_load_from_cache(
+                file_path=file_path, expected_hash=expected_hash
+            )
+        else:
+            model_data = None
+        if not model_data:
+            model_data = self._load_from_url(
+                file_url=file_url, expected_hash=expected_hash
+            )
+            self.save_tokenizer_to_cache(cache_path=file_path, model_data=model_data)
+
+        tokenizer = spm.SentencePieceProcessor()
+        tokenizer.LoadFromSerializedProto(model_data)
+        super().__init__(model_name=model_name, tokenizer=tokenizer)
+
+    def _is_valid_model(self, model_data: bytes, expected_hash: str) -> bool:
+        """Returns true if the content is valid by checking the hash."""
+        return hashlib.sha256(model_data).hexdigest() == expected_hash
+
+    def _maybe_load_from_cache(self, file_path: Path, expected_hash: str) -> bytes:
+        """Loads the model data from the cache path."""
+        if not file_path.is_file():
+            return
+        with open(file_path, "rb") as f:
+            content = f.read()
+        if self._is_valid_model(model_data=content, expected_hash=expected_hash):
+            return content
+
+        # Cached file corrupted.
+        self._maybe_remove_file(file_path)
+
+    def _load_from_url(self, file_url: str, expected_hash: str) -> bytes:
+        """Loads model bytes from the given file url."""
+        resp = requests.get(file_url)
+        resp.raise_for_status()
+        content = resp.content
+
+        if not self._is_valid_model(model_data=content, expected_hash=expected_hash):
+            actual_hash = hashlib.sha256(content).hexdigest()
+            raise ValueError(
+                f"Downloaded model file is corrupted."
+                f" Expected hash {expected_hash}. Got file hash {actual_hash}."
+            )
+        return content
+
+    @staticmethod
+    def save_tokenizer_to_cache(cache_path: Path, model_data: bytes) -> None:
+        """Saves the model data to the cache path."""
+        try:
+            if not cache_path.is_file():
+                cache_dir = cache_path.parent
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                with open(cache_path, "wb") as f:
+                    f.write(model_data)
+        except OSError:
+            # Don't raise if we cannot write file.
+            pass
+
+    @staticmethod
+    def _maybe_remove_file(file_path: Path) -> None:
+        """Removes the file if exists."""
+        if not file_path.is_file():
+            return
+        try:
+            file_path.unlink()
+        except OSError:
+            # Don't raise if we cannot remove file.
+            pass
+
+    # def encode(self, content: str) -> list[int]:
+    #     return self.tokenizer.encode(content)
+
+    # def decode(self, tokens: list[int]) -> str:
+    #     return self.tokenizer.decode(tokens)
+
+
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    # 1. Initialize the GenAI Client with your Gemini API Key
+    client = genai.Client(api_key=gemini_api_key)
+
+    # 2. Combine prompts: system prompt, history, and user prompt
+    if history_messages is None:
+        history_messages = []
+
+    combined_prompt = ""
+    if system_prompt:
+        combined_prompt += f"{system_prompt}\n"
+
+    for msg in history_messages:
+        # Each msg is expected to be a dict: {"role": "...", "content": "..."}
+        combined_prompt += f"{msg['role']}: {msg['content']}\n"
+
+    # Finally, add the new user prompt
+    combined_prompt += f"user: {prompt}"
+
+    # 3. Call the Gemini model
+    response = client.models.generate_content(
+        model="gemini-1.5-flash",
+        contents=[combined_prompt],
+        config=types.GenerateContentConfig(max_output_tokens=500, temperature=0.1),
+    )
+
+    # 4. Return the response text
+    return response.text
+
+
+async def embedding_func(texts: list[str]) -> np.ndarray:
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    embeddings = model.encode(texts, convert_to_numpy=True)
+    return embeddings
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        # tiktoken_model_name="gpt-4o-mini",
+        tokenizer=GemmaTokenizer(
+            tokenizer_dir=(Path(WORKING_DIR) / "vertexai_tokenizer_model"),
+            model_name="gemini-2.0-flash",
+        ),
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=384,
+            max_token_size=8192,
+            func=embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+    file_path = "story.txt"
+    with open(file_path, "r") as file:
+        text = file.read()
+
+    rag.insert(text)
+
+    response = rag.query(
+        query="What is the main theme of the story?",
+        param=QueryParam(mode="hybrid", top_k=5, response_type="single line"),
+    )
+
+    print(response)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/lightrag_gemini_track_token_demo.py
+================================================
+# pip install -q -U google-genai to use gemini as a client
+
+import os
+import asyncio
+import numpy as np
+import nest_asyncio
+from google import genai
+from google.genai import types
+from dotenv import load_dotenv
+from lightrag.utils import EmbeddingFunc
+from lightrag import LightRAG, QueryParam
+from lightrag.kg.shared_storage import initialize_pipeline_status
+from lightrag.llm.siliconcloud import siliconcloud_embedding
+from lightrag.utils import setup_logger
+from lightrag.utils import TokenTracker
+
+setup_logger("lightrag", level="DEBUG")
+
+# Apply nest_asyncio to solve event loop issues
+nest_asyncio.apply()
+
+load_dotenv()
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+siliconflow_api_key = os.getenv("SILICONFLOW_API_KEY")
+
+WORKING_DIR = "./dickens"
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+token_tracker = TokenTracker()
+
+
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    # 1. Initialize the GenAI Client with your Gemini API Key
+    client = genai.Client(api_key=gemini_api_key)
+
+    # 2. Combine prompts: system prompt, history, and user prompt
+    if history_messages is None:
+        history_messages = []
+
+    combined_prompt = ""
+    if system_prompt:
+        combined_prompt += f"{system_prompt}\n"
+
+    for msg in history_messages:
+        # Each msg is expected to be a dict: {"role": "...", "content": "..."}
+        combined_prompt += f"{msg['role']}: {msg['content']}\n"
+
+    # Finally, add the new user prompt
+    combined_prompt += f"user: {prompt}"
+
+    # 3. Call the Gemini model
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[combined_prompt],
+        config=types.GenerateContentConfig(
+            max_output_tokens=5000, temperature=0, top_k=10
+        ),
+    )
+
+    # 4. Get token counts with null safety
+    usage = getattr(response, "usage_metadata", None)
+    prompt_tokens = getattr(usage, "prompt_token_count", 0) or 0
+    completion_tokens = getattr(usage, "candidates_token_count", 0) or 0
+    total_tokens = getattr(usage, "total_token_count", 0) or (
+        prompt_tokens + completion_tokens
+    )
+
+    token_counts = {
+        "prompt_tokens": prompt_tokens,
+        "completion_tokens": completion_tokens,
+        "total_tokens": total_tokens,
+    }
+
+    token_tracker.add_usage(token_counts)
+
+    # 5. Return the response text
+    return response.text
+
+
+async def embedding_func(texts: list[str]) -> np.ndarray:
+    return await siliconcloud_embedding(
+        texts,
+        model="BAAI/bge-m3",
+        api_key=siliconflow_api_key,
+        max_token_size=512,
+    )
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        entity_extract_max_gleaning=1,
+        enable_llm_cache=True,
+        enable_llm_cache_for_entity_extract=True,
+        embedding_cache_config={"enabled": True, "similarity_threshold": 0.90},
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=1024,
+            max_token_size=8192,
+            func=embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Context Manager Method
+    with token_tracker:
+        print(
+            rag.query(
+                "What are the top themes in this story?", param=QueryParam(mode="naive")
+            )
+        )
+
+        print(
+            rag.query(
+                "What are the top themes in this story?", param=QueryParam(mode="local")
+            )
+        )
+
+        print(
+            rag.query(
+                "What are the top themes in this story?",
+                param=QueryParam(mode="global"),
+            )
+        )
+
+        print(
+            rag.query(
+                "What are the top themes in this story?",
+                param=QueryParam(mode="hybrid"),
+            )
+        )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/lightrag_ollama_demo.py
+================================================
+import asyncio
+import os
+import inspect
+import logging
+import logging.config
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.ollama import ollama_model_complete, ollama_embed
+from lightrag.utils import EmbeddingFunc, logger, set_verbose_debug
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=".env", override=False)
+
+WORKING_DIR = "./dickens"
+
+
+def configure_logging():
+    """Configure logging for the application"""
+
+    # Reset any existing handlers to ensure clean configuration
+    for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "lightrag"]:
+        logger_instance = logging.getLogger(logger_name)
+        logger_instance.handlers = []
+        logger_instance.filters = []
+
+    # Get log directory path from environment variable or use current directory
+    log_dir = os.getenv("LOG_DIR", os.getcwd())
+    log_file_path = os.path.abspath(os.path.join(log_dir, "lightrag_ollama_demo.log"))
+
+    print(f"\nLightRAG compatible demo log file: {log_file_path}\n")
+    os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+
+    # Get log file max size and backup count from environment variables
+    log_max_bytes = int(os.getenv("LOG_MAX_BYTES", 10485760))  # Default 10MB
+    log_backup_count = int(os.getenv("LOG_BACKUP_COUNT", 5))  # Default 5 backups
+
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": "%(levelname)s: %(message)s",
+                },
+                "detailed": {
+                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                },
+            },
+            "handlers": {
+                "console": {
+                    "formatter": "default",
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://sys.stderr",
+                },
+                "file": {
+                    "formatter": "detailed",
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "filename": log_file_path,
+                    "maxBytes": log_max_bytes,
+                    "backupCount": log_backup_count,
+                    "encoding": "utf-8",
+                },
+            },
+            "loggers": {
+                "lightrag": {
+                    "handlers": ["console", "file"],
+                    "level": "INFO",
+                    "propagate": False,
+                },
+            },
+        }
+    )
+
+    # Set the logger level to INFO
+    logger.setLevel(logging.INFO)
+    # Enable verbose debug if needed
+    set_verbose_debug(os.getenv("VERBOSE_DEBUG", "false").lower() == "true")
+
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=ollama_model_complete,
+        llm_model_name=os.getenv("LLM_MODEL", "qwen2.5-coder:7b"),
+        llm_model_max_token_size=8192,
+        llm_model_kwargs={
+            "host": os.getenv("LLM_BINDING_HOST", "http://localhost:11434"),
+            "options": {"num_ctx": 8192},
+            "timeout": int(os.getenv("TIMEOUT", "300")),
+        },
+        embedding_func=EmbeddingFunc(
+            embedding_dim=int(os.getenv("EMBEDDING_DIM", "1024")),
+            max_token_size=int(os.getenv("MAX_EMBED_TOKENS", "8192")),
+            func=lambda texts: ollama_embed(
+                texts,
+                embed_model=os.getenv("EMBEDDING_MODEL", "bge-m3:latest"),
+                host=os.getenv("EMBEDDING_BINDING_HOST", "http://localhost:11434"),
+            ),
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+async def print_stream(stream):
+    async for chunk in stream:
+        print(chunk, end="", flush=True)
+
+
+async def main():
+    try:
+        # Clear old data files
+        files_to_delete = [
+            "graph_chunk_entity_relation.graphml",
+            "kv_store_doc_status.json",
+            "kv_store_full_docs.json",
+            "kv_store_text_chunks.json",
+            "vdb_chunks.json",
+            "vdb_entities.json",
+            "vdb_relationships.json",
+        ]
+
+        for file in files_to_delete:
+            file_path = os.path.join(WORKING_DIR, file)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Deleting old file:: {file_path}")
+
+        # Initialize RAG instance
+        rag = await initialize_rag()
+
+        # Test embedding function
+        test_text = ["This is a test string for embedding."]
+        embedding = await rag.embedding_func(test_text)
+        embedding_dim = embedding.shape[1]
+        print("\n=======================")
+        print("Test embedding function")
+        print("========================")
+        print(f"Test dict: {test_text}")
+        print(f"Detected embedding dimension: {embedding_dim}\n\n")
+
+        with open("./book.txt", "r", encoding="utf-8") as f:
+            await rag.ainsert(f.read())
+
+        # Perform naive search
+        print("\n=====================")
+        print("Query mode: naive")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="naive", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+        # Perform local search
+        print("\n=====================")
+        print("Query mode: local")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="local", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+        # Perform global search
+        print("\n=====================")
+        print("Query mode: global")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="global", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+        # Perform hybrid search
+        print("\n=====================")
+        print("Query mode: hybrid")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="hybrid", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if rag:
+            await rag.llm_response_cache.index_done_callback()
+            await rag.finalize_storages()
+
+
+if __name__ == "__main__":
+    # Configure logging before running the main function
+    configure_logging()
+    asyncio.run(main())
+    print("\nDone!")
+
+
+
+================================================
+FILE: examples/lightrag_openai_compatible_demo.py
+================================================
+import os
+import asyncio
+import inspect
+import logging
+import logging.config
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.openai import openai_complete_if_cache
+from lightrag.llm.ollama import ollama_embed
+from lightrag.utils import EmbeddingFunc, logger, set_verbose_debug
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+from dotenv import load_dotenv
+
+load_dotenv(dotenv_path=".env", override=False)
+
+WORKING_DIR = "./dickens"
+
+
+def configure_logging():
+    """Configure logging for the application"""
+
+    # Reset any existing handlers to ensure clean configuration
+    for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "lightrag"]:
+        logger_instance = logging.getLogger(logger_name)
+        logger_instance.handlers = []
+        logger_instance.filters = []
+
+    # Get log directory path from environment variable or use current directory
+    log_dir = os.getenv("LOG_DIR", os.getcwd())
+    log_file_path = os.path.abspath(
+        os.path.join(log_dir, "lightrag_compatible_demo.log")
+    )
+
+    print(f"\nLightRAG compatible demo log file: {log_file_path}\n")
+    os.makedirs(os.path.dirname(log_dir), exist_ok=True)
+
+    # Get log file max size and backup count from environment variables
+    log_max_bytes = int(os.getenv("LOG_MAX_BYTES", 10485760))  # Default 10MB
+    log_backup_count = int(os.getenv("LOG_BACKUP_COUNT", 5))  # Default 5 backups
+
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": "%(levelname)s: %(message)s",
+                },
+                "detailed": {
+                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                },
+            },
+            "handlers": {
+                "console": {
+                    "formatter": "default",
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://sys.stderr",
+                },
+                "file": {
+                    "formatter": "detailed",
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "filename": log_file_path,
+                    "maxBytes": log_max_bytes,
+                    "backupCount": log_backup_count,
+                    "encoding": "utf-8",
+                },
+            },
+            "loggers": {
+                "lightrag": {
+                    "handlers": ["console", "file"],
+                    "level": "INFO",
+                    "propagate": False,
+                },
+            },
+        }
+    )
+
+    # Set the logger level to INFO
+    logger.setLevel(logging.INFO)
+    # Enable verbose debug if needed
+    set_verbose_debug(os.getenv("VERBOSE_DEBUG", "false").lower() == "true")
+
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    return await openai_complete_if_cache(
+        os.getenv("LLM_MODEL", "deepseek-chat"),
+        prompt,
+        system_prompt=system_prompt,
+        history_messages=history_messages,
+        api_key=os.getenv("LLM_BINDING_API_KEY") or os.getenv("OPENAI_API_KEY"),
+        base_url=os.getenv("LLM_BINDING_HOST", "https://api.deepseek.com"),
+        **kwargs,
+    )
+
+
+async def print_stream(stream):
+    async for chunk in stream:
+        if chunk:
+            print(chunk, end="", flush=True)
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=int(os.getenv("EMBEDDING_DIM", "1024")),
+            max_token_size=int(os.getenv("MAX_EMBED_TOKENS", "8192")),
+            func=lambda texts: ollama_embed(
+                texts,
+                embed_model=os.getenv("EMBEDDING_MODEL", "bge-m3:latest"),
+                host=os.getenv("EMBEDDING_BINDING_HOST", "http://localhost:11434"),
+            ),
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+async def main():
+    try:
+        # Clear old data files
+        files_to_delete = [
+            "graph_chunk_entity_relation.graphml",
+            "kv_store_doc_status.json",
+            "kv_store_full_docs.json",
+            "kv_store_text_chunks.json",
+            "vdb_chunks.json",
+            "vdb_entities.json",
+            "vdb_relationships.json",
+        ]
+
+        for file in files_to_delete:
+            file_path = os.path.join(WORKING_DIR, file)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Deleting old file:: {file_path}")
+
+        # Initialize RAG instance
+        rag = await initialize_rag()
+
+        # Test embedding function
+        test_text = ["This is a test string for embedding."]
+        embedding = await rag.embedding_func(test_text)
+        embedding_dim = embedding.shape[1]
+        print("\n=======================")
+        print("Test embedding function")
+        print("========================")
+        print(f"Test dict: {test_text}")
+        print(f"Detected embedding dimension: {embedding_dim}\n\n")
+
+        with open("./book.txt", "r", encoding="utf-8") as f:
+            await rag.ainsert(f.read())
+
+        # Perform naive search
+        print("\n=====================")
+        print("Query mode: naive")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="naive", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+        # Perform local search
+        print("\n=====================")
+        print("Query mode: local")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="local", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+        # Perform global search
+        print("\n=====================")
+        print("Query mode: global")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="global", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+        # Perform hybrid search
+        print("\n=====================")
+        print("Query mode: hybrid")
+        print("=====================")
+        resp = await rag.aquery(
+            "What are the top themes in this story?",
+            param=QueryParam(mode="hybrid", stream=True),
+        )
+        if inspect.isasyncgen(resp):
+            await print_stream(resp)
+        else:
+            print(resp)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if rag:
+            await rag.finalize_storages()
+
+
+if __name__ == "__main__":
+    # Configure logging before running the main function
+    configure_logging()
+    asyncio.run(main())
+    print("\nDone!")
+
+
+
+================================================
+FILE: examples/lightrag_openai_demo.py
+================================================
+import os
+import asyncio
+import logging
+import logging.config
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.openai import gpt_4o_mini_complete, openai_embed
+from lightrag.kg.shared_storage import initialize_pipeline_status
+from lightrag.utils import logger, set_verbose_debug
+
+WORKING_DIR = "./dickens"
+
+
+def configure_logging():
+    """Configure logging for the application"""
+
+    # Reset any existing handlers to ensure clean configuration
+    for logger_name in ["uvicorn", "uvicorn.access", "uvicorn.error", "lightrag"]:
+        logger_instance = logging.getLogger(logger_name)
+        logger_instance.handlers = []
+        logger_instance.filters = []
+
+    # Get log directory path from environment variable or use current directory
+    log_dir = os.getenv("LOG_DIR", os.getcwd())
+    log_file_path = os.path.abspath(os.path.join(log_dir, "lightrag_demo.log"))
+
+    print(f"\nLightRAG demo log file: {log_file_path}\n")
+    os.makedirs(os.path.dirname(log_dir), exist_ok=True)
+
+    # Get log file max size and backup count from environment variables
+    log_max_bytes = int(os.getenv("LOG_MAX_BYTES", 10485760))  # Default 10MB
+    log_backup_count = int(os.getenv("LOG_BACKUP_COUNT", 5))  # Default 5 backups
+
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": "%(levelname)s: %(message)s",
+                },
+                "detailed": {
+                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                },
+            },
+            "handlers": {
+                "console": {
+                    "formatter": "default",
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://sys.stderr",
+                },
+                "file": {
+                    "formatter": "detailed",
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "filename": log_file_path,
+                    "maxBytes": log_max_bytes,
+                    "backupCount": log_backup_count,
+                    "encoding": "utf-8",
+                },
+            },
+            "loggers": {
+                "lightrag": {
+                    "handlers": ["console", "file"],
+                    "level": "INFO",
+                    "propagate": False,
+                },
+            },
+        }
+    )
+
+    # Set the logger level to INFO
+    logger.setLevel(logging.INFO)
+    # Enable verbose debug if needed
+    set_verbose_debug(os.getenv("VERBOSE_DEBUG", "false").lower() == "true")
+
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        embedding_func=openai_embed,
+        llm_model_func=gpt_4o_mini_complete,
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+async def main():
+    # Check if OPENAI_API_KEY environment variable exists
+    if not os.getenv("OPENAI_API_KEY"):
+        print(
+            "Error: OPENAI_API_KEY environment variable is not set. Please set this variable before running the program."
+        )
+        print("You can set the environment variable by running:")
+        print("  export OPENAI_API_KEY='your-openai-api-key'")
+        return  # Exit the async function
+
+    try:
+        # Clear old data files
+        files_to_delete = [
+            "graph_chunk_entity_relation.graphml",
+            "kv_store_doc_status.json",
+            "kv_store_full_docs.json",
+            "kv_store_text_chunks.json",
+            "vdb_chunks.json",
+            "vdb_entities.json",
+            "vdb_relationships.json",
+        ]
+
+        for file in files_to_delete:
+            file_path = os.path.join(WORKING_DIR, file)
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Deleting old file:: {file_path}")
+
+        # Initialize RAG instance
+        rag = await initialize_rag()
+
+        # Test embedding function
+        test_text = ["This is a test string for embedding."]
+        embedding = await rag.embedding_func(test_text)
+        embedding_dim = embedding.shape[1]
+        print("\n=======================")
+        print("Test embedding function")
+        print("========================")
+        print(f"Test dict: {test_text}")
+        print(f"Detected embedding dimension: {embedding_dim}\n\n")
+
+        with open("./book.txt", "r", encoding="utf-8") as f:
+            await rag.ainsert(f.read())
+
+        # Perform naive search
+        print("\n=====================")
+        print("Query mode: naive")
+        print("=====================")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?", param=QueryParam(mode="naive")
+            )
+        )
+
+        # Perform local search
+        print("\n=====================")
+        print("Query mode: local")
+        print("=====================")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?", param=QueryParam(mode="local")
+            )
+        )
+
+        # Perform global search
+        print("\n=====================")
+        print("Query mode: global")
+        print("=====================")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?",
+                param=QueryParam(mode="global"),
+            )
+        )
+
+        # Perform hybrid search
+        print("\n=====================")
+        print("Query mode: hybrid")
+        print("=====================")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?",
+                param=QueryParam(mode="hybrid"),
+            )
+        )
+    except Exception as e:
+        print(f"An error occurred: {e}")
+    finally:
+        if rag:
+            await rag.finalize_storages()
+
+
+if __name__ == "__main__":
+    # Configure logging before running the main function
+    configure_logging()
+    asyncio.run(main())
+    print("\nDone!")
+
+
+
+================================================
+FILE: examples/lightrag_openai_mongodb_graph_demo.py
+================================================
+import os
+import asyncio
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.openai import gpt_4o_mini_complete, openai_embed
+from lightrag.utils import EmbeddingFunc
+import numpy as np
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+#########
+# Uncomment the below two lines if running in a jupyter notebook to handle the async nature of rag.insert()
+# import nest_asyncio
+# nest_asyncio.apply()
+#########
+WORKING_DIR = "./mongodb_test_dir"
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+os.environ["OPENAI_API_KEY"] = "sk-"
+os.environ["MONGO_URI"] = "mongodb://0.0.0.0:27017/?directConnection=true"
+os.environ["MONGO_DATABASE"] = "LightRAG"
+os.environ["MONGO_KG_COLLECTION"] = "MDB_KG"
+
+# Embedding Configuration and Functions
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large")
+EMBEDDING_MAX_TOKEN_SIZE = int(os.environ.get("EMBEDDING_MAX_TOKEN_SIZE", 8192))
+
+
+async def embedding_func(texts: list[str]) -> np.ndarray:
+    return await openai_embed(
+        texts,
+        model=EMBEDDING_MODEL,
+    )
+
+
+async def get_embedding_dimension():
+    test_text = ["This is a test sentence."]
+    embedding = await embedding_func(test_text)
+    return embedding.shape[1]
+
+
+async def create_embedding_function_instance():
+    # Get embedding dimension
+    embedding_dimension = await get_embedding_dimension()
+    # Create embedding function instance
+    return EmbeddingFunc(
+        embedding_dim=embedding_dimension,
+        max_token_size=EMBEDDING_MAX_TOKEN_SIZE,
+        func=embedding_func,
+    )
+
+
+async def initialize_rag():
+    embedding_func_instance = await create_embedding_function_instance()
+
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=gpt_4o_mini_complete,
+        embedding_func=embedding_func_instance,
+        graph_storage="MongoGraphStorage",
+        log_level="DEBUG",
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Perform naive search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="naive")
+        )
+    )
+
+    # Perform local search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="local")
+        )
+    )
+
+    # Perform global search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="global")
+        )
+    )
+
+    # Perform hybrid search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="hybrid")
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/modalprocessors_example.py
+================================================
+"""
+Example of directly using modal processors
+
+This example demonstrates how to use LightRAG's modal processors directly without going through MinerU.
+"""
+
+import asyncio
+import argparse
+from lightrag.llm.openai import openai_complete_if_cache, openai_embed
+from lightrag.kg.shared_storage import initialize_pipeline_status
+from lightrag import LightRAG
+from lightrag.utils import EmbeddingFunc
+from raganything.modalprocessors import (
+    ImageModalProcessor,
+    TableModalProcessor,
+    EquationModalProcessor,
+)
+
+WORKING_DIR = "./rag_storage"
+
+
+def get_llm_model_func(api_key: str, base_url: str = None):
+    return (
+        lambda prompt,
+        system_prompt=None,
+        history_messages=[],
+        **kwargs: openai_complete_if_cache(
+            "gpt-4o-mini",
+            prompt,
+            system_prompt=system_prompt,
+            history_messages=history_messages,
+            api_key=api_key,
+            base_url=base_url,
+            **kwargs,
+        )
+    )
+
+
+def get_vision_model_func(api_key: str, base_url: str = None):
+    return (
+        lambda prompt,
+        system_prompt=None,
+        history_messages=[],
+        image_data=None,
+        **kwargs: openai_complete_if_cache(
+            "gpt-4o",
+            "",
+            system_prompt=None,
+            history_messages=[],
+            messages=[
+                {"role": "system", "content": system_prompt} if system_prompt else None,
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{image_data}"
+                            },
+                        },
+                    ],
+                }
+                if image_data
+                else {"role": "user", "content": prompt},
+            ],
+            api_key=api_key,
+            base_url=base_url,
+            **kwargs,
+        )
+        if image_data
+        else openai_complete_if_cache(
+            "gpt-4o-mini",
+            prompt,
+            system_prompt=system_prompt,
+            history_messages=history_messages,
+            api_key=api_key,
+            base_url=base_url,
+            **kwargs,
+        )
+    )
+
+
+async def process_image_example(lightrag: LightRAG, vision_model_func):
+    """Example of processing an image"""
+    # Create image processor
+    image_processor = ImageModalProcessor(
+        lightrag=lightrag, modal_caption_func=vision_model_func
+    )
+
+    # Prepare image content
+    image_content = {
+        "img_path": "image.jpg",
+        "img_caption": ["Example image caption"],
+        "img_footnote": ["Example image footnote"],
+    }
+
+    # Process image
+    description, entity_info = await image_processor.process_multimodal_content(
+        modal_content=image_content,
+        content_type="image",
+        file_path="image_example.jpg",
+        entity_name="Example Image",
+    )
+
+    print("Image Processing Results:")
+    print(f"Description: {description}")
+    print(f"Entity Info: {entity_info}")
+
+
+async def process_table_example(lightrag: LightRAG, llm_model_func):
+    """Example of processing a table"""
+    # Create table processor
+    table_processor = TableModalProcessor(
+        lightrag=lightrag, modal_caption_func=llm_model_func
+    )
+
+    # Prepare table content
+    table_content = {
+        "table_body": """
+        | Name | Age | Occupation |
+        |------|-----|------------|
+        | John | 25  | Engineer   |
+        | Mary | 30  | Designer   |
+        """,
+        "table_caption": ["Employee Information Table"],
+        "table_footnote": ["Data updated as of 2024"],
+    }
+
+    # Process table
+    description, entity_info = await table_processor.process_multimodal_content(
+        modal_content=table_content,
+        content_type="table",
+        file_path="table_example.md",
+        entity_name="Employee Table",
+    )
+
+    print("\nTable Processing Results:")
+    print(f"Description: {description}")
+    print(f"Entity Info: {entity_info}")
+
+
+async def process_equation_example(lightrag: LightRAG, llm_model_func):
+    """Example of processing a mathematical equation"""
+    # Create equation processor
+    equation_processor = EquationModalProcessor(
+        lightrag=lightrag, modal_caption_func=llm_model_func
+    )
+
+    # Prepare equation content
+    equation_content = {"text": "E = mc^2", "text_format": "LaTeX"}
+
+    # Process equation
+    description, entity_info = await equation_processor.process_multimodal_content(
+        modal_content=equation_content,
+        content_type="equation",
+        file_path="equation_example.txt",
+        entity_name="Mass-Energy Equivalence",
+    )
+
+    print("\nEquation Processing Results:")
+    print(f"Description: {description}")
+    print(f"Entity Info: {entity_info}")
+
+
+async def initialize_rag(api_key: str, base_url: str = None):
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=3072,
+            max_token_size=8192,
+            func=lambda texts: openai_embed(
+                texts,
+                model="text-embedding-3-large",
+                api_key=api_key,
+                base_url=base_url,
+            ),
+        ),
+        llm_model_func=lambda prompt,
+        system_prompt=None,
+        history_messages=[],
+        **kwargs: openai_complete_if_cache(
+            "gpt-4o-mini",
+            prompt,
+            system_prompt=system_prompt,
+            history_messages=history_messages,
+            api_key=api_key,
+            base_url=base_url,
+            **kwargs,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    """Main function to run the example"""
+    parser = argparse.ArgumentParser(description="Modal Processors Example")
+    parser.add_argument("--api-key", required=True, help="OpenAI API key")
+    parser.add_argument("--base-url", help="Optional base URL for API")
+    parser.add_argument(
+        "--working-dir", "-w", default=WORKING_DIR, help="Working directory path"
+    )
+
+    args = parser.parse_args()
+
+    # Run examples
+    asyncio.run(main_async(args.api_key, args.base_url))
+
+
+async def main_async(api_key: str, base_url: str = None):
+    # Initialize LightRAG
+    lightrag = await initialize_rag(api_key, base_url)
+
+    # Get model functions
+    llm_model_func = get_llm_model_func(api_key, base_url)
+    vision_model_func = get_vision_model_func(api_key, base_url)
+
+    # Run examples
+    await process_image_example(lightrag, vision_model_func)
+    await process_table_example(lightrag, llm_model_func)
+    await process_equation_example(lightrag, llm_model_func)
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/raganything_example.py
+================================================
+#!/usr/bin/env python
+"""
+Example script demonstrating the integration of MinerU parser with RAGAnything
+
+This example shows how to:
+1. Process parsed documents with RAGAnything
+2. Perform multimodal queries on the processed documents
+3. Handle different types of content (text, images, tables)
+"""
+
+import os
+import argparse
+import asyncio
+from lightrag.llm.openai import openai_complete_if_cache, openai_embed
+from lightrag.utils import EmbeddingFunc
+from raganything.raganything import RAGAnything
+
+
+async def process_with_rag(
+    file_path: str,
+    output_dir: str,
+    api_key: str,
+    base_url: str = None,
+    working_dir: str = None,
+):
+    """
+    Process document with RAGAnything
+
+    Args:
+        file_path: Path to the document
+        output_dir: Output directory for RAG results
+        api_key: OpenAI API key
+        base_url: Optional base URL for API
+    """
+    try:
+        # Initialize RAGAnything
+        rag = RAGAnything(
+            working_dir=working_dir,
+            llm_model_func=lambda prompt,
+            system_prompt=None,
+            history_messages=[],
+            **kwargs: openai_complete_if_cache(
+                "gpt-4o-mini",
+                prompt,
+                system_prompt=system_prompt,
+                history_messages=history_messages,
+                api_key=api_key,
+                base_url=base_url,
+                **kwargs,
+            ),
+            vision_model_func=lambda prompt,
+            system_prompt=None,
+            history_messages=[],
+            image_data=None,
+            **kwargs: openai_complete_if_cache(
+                "gpt-4o",
+                "",
+                system_prompt=None,
+                history_messages=[],
+                messages=[
+                    {"role": "system", "content": system_prompt}
+                    if system_prompt
+                    else None,
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": prompt},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": f"data:image/jpeg;base64,{image_data}"
+                                },
+                            },
+                        ],
+                    }
+                    if image_data
+                    else {"role": "user", "content": prompt},
+                ],
+                api_key=api_key,
+                base_url=base_url,
+                **kwargs,
+            )
+            if image_data
+            else openai_complete_if_cache(
+                "gpt-4o-mini",
+                prompt,
+                system_prompt=system_prompt,
+                history_messages=history_messages,
+                api_key=api_key,
+                base_url=base_url,
+                **kwargs,
+            ),
+            embedding_func=EmbeddingFunc(
+                embedding_dim=3072,
+                max_token_size=8192,
+                func=lambda texts: openai_embed(
+                    texts,
+                    model="text-embedding-3-large",
+                    api_key=api_key,
+                    base_url=base_url,
+                ),
+            ),
+        )
+
+        # Process document
+        await rag.process_document_complete(
+            file_path=file_path, output_dir=output_dir, parse_method="auto"
+        )
+
+        # Example queries
+        queries = [
+            "What is the main content of the document?",
+            "Describe the images and figures in the document",
+            "Tell me about the experimental results and data tables",
+        ]
+
+        print("\nQuerying processed document:")
+        for query in queries:
+            print(f"\nQuery: {query}")
+            result = await rag.query_with_multimodal(query, mode="hybrid")
+            print(f"Answer: {result}")
+
+    except Exception as e:
+        print(f"Error processing with RAG: {str(e)}")
+
+
+def main():
+    """Main function to run the example"""
+    parser = argparse.ArgumentParser(description="MinerU RAG Example")
+    parser.add_argument("file_path", help="Path to the document to process")
+    parser.add_argument(
+        "--working_dir", "-w", default="./rag_storage", help="Working directory path"
+    )
+    parser.add_argument(
+        "--output", "-o", default="./output", help="Output directory path"
+    )
+    parser.add_argument(
+        "--api-key", required=True, help="OpenAI API key for RAG processing"
+    )
+    parser.add_argument("--base-url", help="Optional base URL for API")
+
+    args = parser.parse_args()
+
+    # Create output directory if specified
+    if args.output:
+        os.makedirs(args.output, exist_ok=True)
+
+    # Process with RAG
+    asyncio.run(
+        process_with_rag(
+            args.file_path, args.output, args.api_key, args.base_url, args.working_dir
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/unofficial-sample/copy_llm_cache_to_another_storage.py
+================================================
+"""
+Sometimes you need to switch a storage solution, but you want to save LLM token and time.
+This handy script helps you to copy the LLM caches from one storage solution to another.
+(Not all the storage impl are supported)
+"""
+
+import asyncio
+import logging
+import os
+from dotenv import load_dotenv
+
+from lightrag.kg.postgres_impl import PostgreSQLDB, PGKVStorage
+from lightrag.kg.json_kv_impl import JsonKVStorage
+from lightrag.namespace import NameSpace
+
+load_dotenv()
+ROOT_DIR = os.environ.get("ROOT_DIR")
+WORKING_DIR = f"{ROOT_DIR}/dickens"
+
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+# AGE
+os.environ["AGE_GRAPH_NAME"] = "chinese"
+
+postgres_db = PostgreSQLDB(
+    config={
+        "host": "localhost",
+        "port": 15432,
+        "user": "rag",
+        "password": "rag",
+        "database": "r2",
+    }
+)
+
+
+async def copy_from_postgres_to_json():
+    await postgres_db.initdb()
+
+    from_llm_response_cache = PGKVStorage(
+        namespace=NameSpace.KV_STORE_LLM_RESPONSE_CACHE,
+        global_config={"embedding_batch_num": 6},
+        embedding_func=None,
+        db=postgres_db,
+    )
+
+    to_llm_response_cache = JsonKVStorage(
+        namespace=NameSpace.KV_STORE_LLM_RESPONSE_CACHE,
+        global_config={"working_dir": WORKING_DIR},
+        embedding_func=None,
+    )
+
+    # Get all cache data using the new flattened structure
+    all_data = await from_llm_response_cache.get_all()
+
+    # Convert flattened data to hierarchical structure for JsonKVStorage
+    kv = {}
+    for flattened_key, cache_entry in all_data.items():
+        # Parse flattened key: {mode}:{cache_type}:{hash}
+        parts = flattened_key.split(":", 2)
+        if len(parts) == 3:
+            mode, cache_type, hash_value = parts
+            if mode not in kv:
+                kv[mode] = {}
+            kv[mode][hash_value] = cache_entry
+            print(f"Copying {flattened_key} -> {mode}[{hash_value}]")
+        else:
+            print(f"Skipping invalid key format: {flattened_key}")
+
+    await to_llm_response_cache.upsert(kv)
+    await to_llm_response_cache.index_done_callback()
+    print("Mission accomplished!")
+
+
+async def copy_from_json_to_postgres():
+    await postgres_db.initdb()
+
+    from_llm_response_cache = JsonKVStorage(
+        namespace=NameSpace.KV_STORE_LLM_RESPONSE_CACHE,
+        global_config={"working_dir": WORKING_DIR},
+        embedding_func=None,
+    )
+
+    to_llm_response_cache = PGKVStorage(
+        namespace=NameSpace.KV_STORE_LLM_RESPONSE_CACHE,
+        global_config={"embedding_batch_num": 6},
+        embedding_func=None,
+        db=postgres_db,
+    )
+
+    # Get all cache data from JsonKVStorage (hierarchical structure)
+    all_data = await from_llm_response_cache.get_all()
+
+    # Convert hierarchical data to flattened structure for PGKVStorage
+    flattened_data = {}
+    for mode, mode_data in all_data.items():
+        print(f"Processing mode: {mode}")
+        for hash_value, cache_entry in mode_data.items():
+            # Determine cache_type from cache entry or use default
+            cache_type = cache_entry.get("cache_type", "extract")
+            # Create flattened key: {mode}:{cache_type}:{hash}
+            flattened_key = f"{mode}:{cache_type}:{hash_value}"
+            flattened_data[flattened_key] = cache_entry
+            print(f"\tConverting {mode}[{hash_value}] -> {flattened_key}")
+
+    # Upsert the flattened data
+    await to_llm_response_cache.upsert(flattened_data)
+    print("Mission accomplished!")
+
+
+if __name__ == "__main__":
+    asyncio.run(copy_from_json_to_postgres())
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_bedrock_demo.py
+================================================
+"""
+LightRAG meets Amazon Bedrock ⛰️
+"""
+
+import os
+import logging
+
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.bedrock import bedrock_complete, bedrock_embed
+from lightrag.utils import EmbeddingFunc
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+import asyncio
+import nest_asyncio
+
+nest_asyncio.apply()
+
+logging.getLogger("aiobotocore").setLevel(logging.WARNING)
+
+WORKING_DIR = "./dickens"
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=bedrock_complete,
+        llm_model_name="Anthropic Claude 3 Haiku // Amazon Bedrock",
+        embedding_func=EmbeddingFunc(
+            embedding_dim=1024, max_token_size=8192, func=bedrock_embed
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    rag = asyncio.run(initialize_rag())
+
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    for mode in ["naive", "local", "global", "hybrid"]:
+        print("\n+-" + "-" * len(mode) + "-+")
+        print(f"| {mode.capitalize()} |")
+        print("+-" + "-" * len(mode) + "-+\n")
+        print(
+            rag.query(
+                "What are the top themes in this story?", param=QueryParam(mode=mode)
+            )
+        )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_hf_demo.py
+================================================
+import os
+
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.hf import hf_model_complete, hf_embed
+from lightrag.utils import EmbeddingFunc
+from transformers import AutoModel, AutoTokenizer
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+import asyncio
+import nest_asyncio
+
+nest_asyncio.apply()
+
+WORKING_DIR = "./dickens"
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=hf_model_complete,
+        llm_model_name="meta-llama/Llama-3.1-8B-Instruct",
+        embedding_func=EmbeddingFunc(
+            embedding_dim=384,
+            max_token_size=5000,
+            func=lambda texts: hf_embed(
+                texts,
+                tokenizer=AutoTokenizer.from_pretrained(
+                    "sentence-transformers/all-MiniLM-L6-v2"
+                ),
+                embed_model=AutoModel.from_pretrained(
+                    "sentence-transformers/all-MiniLM-L6-v2"
+                ),
+            ),
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    rag = asyncio.run(initialize_rag())
+
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Perform naive search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="naive")
+        )
+    )
+
+    # Perform local search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="local")
+        )
+    )
+
+    # Perform global search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="global")
+        )
+    )
+
+    # Perform hybrid search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="hybrid")
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_llamaindex_direct_demo.py
+================================================
+import os
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.llama_index_impl import (
+    llama_index_complete_if_cache,
+    llama_index_embed,
+)
+from lightrag.utils import EmbeddingFunc
+from llama_index.llms.openai import OpenAI
+from llama_index.embeddings.openai import OpenAIEmbedding
+import asyncio
+import nest_asyncio
+
+nest_asyncio.apply()
+
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+# Configure working directory
+WORKING_DIR = "./index_default"
+print(f"WORKING_DIR: {WORKING_DIR}")
+
+# Model configuration
+LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4")
+print(f"LLM_MODEL: {LLM_MODEL}")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large")
+print(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
+EMBEDDING_MAX_TOKEN_SIZE = int(os.environ.get("EMBEDDING_MAX_TOKEN_SIZE", 8192))
+print(f"EMBEDDING_MAX_TOKEN_SIZE: {EMBEDDING_MAX_TOKEN_SIZE}")
+
+# OpenAI configuration
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "your-api-key-here")
+
+if not os.path.exists(WORKING_DIR):
+    print(f"Creating working directory: {WORKING_DIR}")
+    os.mkdir(WORKING_DIR)
+
+
+# Initialize LLM function
+async def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs):
+    try:
+        # Initialize OpenAI if not in kwargs
+        if "llm_instance" not in kwargs:
+            llm_instance = OpenAI(
+                model=LLM_MODEL,
+                api_key=OPENAI_API_KEY,
+                temperature=0.7,
+            )
+            kwargs["llm_instance"] = llm_instance
+
+        response = await llama_index_complete_if_cache(
+            kwargs["llm_instance"],
+            prompt,
+            system_prompt=system_prompt,
+            history_messages=history_messages,
+            **kwargs,
+        )
+        return response
+    except Exception as e:
+        print(f"LLM request failed: {str(e)}")
+        raise
+
+
+# Initialize embedding function
+async def embedding_func(texts):
+    try:
+        embed_model = OpenAIEmbedding(
+            model=EMBEDDING_MODEL,
+            api_key=OPENAI_API_KEY,
+        )
+        return await llama_index_embed(texts, embed_model=embed_model)
+    except Exception as e:
+        print(f"Embedding failed: {str(e)}")
+        raise
+
+
+# Get embedding dimension
+async def get_embedding_dim():
+    test_text = ["This is a test sentence."]
+    embedding = await embedding_func(test_text)
+    embedding_dim = embedding.shape[1]
+    print(f"embedding_dim={embedding_dim}")
+    return embedding_dim
+
+
+async def initialize_rag():
+    embedding_dimension = await get_embedding_dim()
+
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=embedding_dimension,
+            max_token_size=EMBEDDING_MAX_TOKEN_SIZE,
+            func=embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+
+    # Insert example text
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Test different query modes
+    print("\nNaive Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="naive")
+        )
+    )
+
+    print("\nLocal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="local")
+        )
+    )
+
+    print("\nGlobal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="global")
+        )
+    )
+
+    print("\nHybrid Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="hybrid")
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_llamaindex_litellm_demo.py
+================================================
+import os
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.llama_index_impl import (
+    llama_index_complete_if_cache,
+    llama_index_embed,
+)
+from lightrag.utils import EmbeddingFunc
+from llama_index.llms.litellm import LiteLLM
+from llama_index.embeddings.litellm import LiteLLMEmbedding
+import asyncio
+import nest_asyncio
+
+nest_asyncio.apply()
+
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+# Configure working directory
+WORKING_DIR = "./index_default"
+print(f"WORKING_DIR: {WORKING_DIR}")
+
+# Model configuration
+LLM_MODEL = os.environ.get("LLM_MODEL", "gpt-4")
+print(f"LLM_MODEL: {LLM_MODEL}")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "text-embedding-3-large")
+print(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
+EMBEDDING_MAX_TOKEN_SIZE = int(os.environ.get("EMBEDDING_MAX_TOKEN_SIZE", 8192))
+print(f"EMBEDDING_MAX_TOKEN_SIZE: {EMBEDDING_MAX_TOKEN_SIZE}")
+
+# LiteLLM configuration
+LITELLM_URL = os.environ.get("LITELLM_URL", "http://localhost:4000")
+print(f"LITELLM_URL: {LITELLM_URL}")
+LITELLM_KEY = os.environ.get("LITELLM_KEY", "sk-1234")
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+# Initialize LLM function
+async def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs):
+    try:
+        # Initialize LiteLLM if not in kwargs
+        if "llm_instance" not in kwargs:
+            llm_instance = LiteLLM(
+                model=f"openai/{LLM_MODEL}",  # Format: "provider/model_name"
+                api_base=LITELLM_URL,
+                api_key=LITELLM_KEY,
+                temperature=0.7,
+            )
+            kwargs["llm_instance"] = llm_instance
+
+        response = await llama_index_complete_if_cache(
+            kwargs["llm_instance"],
+            prompt,
+            system_prompt=system_prompt,
+            history_messages=history_messages,
+        )
+        return response
+    except Exception as e:
+        print(f"LLM request failed: {str(e)}")
+        raise
+
+
+# Initialize embedding function
+async def embedding_func(texts):
+    try:
+        embed_model = LiteLLMEmbedding(
+            model_name=f"openai/{EMBEDDING_MODEL}",
+            api_base=LITELLM_URL,
+            api_key=LITELLM_KEY,
+        )
+        return await llama_index_embed(texts, embed_model=embed_model)
+    except Exception as e:
+        print(f"Embedding failed: {str(e)}")
+        raise
+
+
+# Get embedding dimension
+async def get_embedding_dim():
+    test_text = ["This is a test sentence."]
+    embedding = await embedding_func(test_text)
+    embedding_dim = embedding.shape[1]
+    print(f"embedding_dim={embedding_dim}")
+    return embedding_dim
+
+
+async def initialize_rag():
+    embedding_dimension = await get_embedding_dim()
+
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=embedding_dimension,
+            max_token_size=EMBEDDING_MAX_TOKEN_SIZE,
+            func=embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+
+    # Insert example text
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Test different query modes
+    print("\nNaive Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="naive")
+        )
+    )
+
+    print("\nLocal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="local")
+        )
+    )
+
+    print("\nGlobal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="global")
+        )
+    )
+
+    print("\nHybrid Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="hybrid")
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_llamaindex_litellm_opik_demo.py
+================================================
+import os
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.llama_index_impl import (
+    llama_index_complete_if_cache,
+    llama_index_embed,
+)
+from lightrag.utils import EmbeddingFunc
+from llama_index.llms.litellm import LiteLLM
+from llama_index.embeddings.litellm import LiteLLMEmbedding
+import asyncio
+import nest_asyncio
+
+nest_asyncio.apply()
+
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+# Configure working directory
+WORKING_DIR = "./index_default"
+print(f"WORKING_DIR: {WORKING_DIR}")
+
+# Model configuration
+LLM_MODEL = os.environ.get("LLM_MODEL", "gemma-3-4b")
+print(f"LLM_MODEL: {LLM_MODEL}")
+EMBEDDING_MODEL = os.environ.get("EMBEDDING_MODEL", "arctic-embed")
+print(f"EMBEDDING_MODEL: {EMBEDDING_MODEL}")
+EMBEDDING_MAX_TOKEN_SIZE = int(os.environ.get("EMBEDDING_MAX_TOKEN_SIZE", 8192))
+print(f"EMBEDDING_MAX_TOKEN_SIZE: {EMBEDDING_MAX_TOKEN_SIZE}")
+
+# LiteLLM configuration
+LITELLM_URL = os.environ.get("LITELLM_URL", "http://localhost:4000")
+print(f"LITELLM_URL: {LITELLM_URL}")
+LITELLM_KEY = os.environ.get("LITELLM_KEY", "sk-4JdvGFKqSA3S0k_5p0xufw")
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+# Initialize LLM function
+async def llm_model_func(prompt, system_prompt=None, history_messages=[], **kwargs):
+    try:
+        # Initialize LiteLLM if not in kwargs
+        if "llm_instance" not in kwargs:
+            llm_instance = LiteLLM(
+                model=f"openai/{LLM_MODEL}",  # Format: "provider/model_name"
+                api_base=LITELLM_URL,
+                api_key=LITELLM_KEY,
+                temperature=0.7,
+            )
+            kwargs["llm_instance"] = llm_instance
+
+        chat_kwargs = {}
+        chat_kwargs["litellm_params"] = {
+            "metadata": {
+                "opik": {
+                    "project_name": "lightrag_llamaindex_litellm_opik_demo",
+                    "tags": ["lightrag", "litellm"],
+                }
+            }
+        }
+
+        response = await llama_index_complete_if_cache(
+            kwargs["llm_instance"],
+            prompt,
+            system_prompt=system_prompt,
+            history_messages=history_messages,
+            chat_kwargs=chat_kwargs,
+        )
+        return response
+    except Exception as e:
+        print(f"LLM request failed: {str(e)}")
+        raise
+
+
+# Initialize embedding function
+async def embedding_func(texts):
+    try:
+        embed_model = LiteLLMEmbedding(
+            model_name=f"openai/{EMBEDDING_MODEL}",
+            api_base=LITELLM_URL,
+            api_key=LITELLM_KEY,
+        )
+        return await llama_index_embed(texts, embed_model=embed_model)
+    except Exception as e:
+        print(f"Embedding failed: {str(e)}")
+        raise
+
+
+# Get embedding dimension
+async def get_embedding_dim():
+    test_text = ["This is a test sentence."]
+    embedding = await embedding_func(test_text)
+    embedding_dim = embedding.shape[1]
+    print(f"embedding_dim={embedding_dim}")
+    return embedding_dim
+
+
+async def initialize_rag():
+    embedding_dimension = await get_embedding_dim()
+
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        embedding_func=EmbeddingFunc(
+            embedding_dim=embedding_dimension,
+            max_token_size=EMBEDDING_MAX_TOKEN_SIZE,
+            func=embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+
+    # Insert example text
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Test different query modes
+    print("\nNaive Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="naive")
+        )
+    )
+
+    print("\nLocal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="local")
+        )
+    )
+
+    print("\nGlobal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="global")
+        )
+    )
+
+    print("\nHybrid Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="hybrid")
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_lmdeploy_demo.py
+================================================
+import os
+
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.lmdeploy import lmdeploy_model_if_cache
+from lightrag.llm.hf import hf_embed
+from lightrag.utils import EmbeddingFunc
+from transformers import AutoModel, AutoTokenizer
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+import asyncio
+import nest_asyncio
+
+nest_asyncio.apply()
+
+WORKING_DIR = "./dickens"
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+
+async def lmdeploy_model_complete(
+    prompt=None,
+    system_prompt=None,
+    history_messages=[],
+    keyword_extraction=False,
+    **kwargs,
+) -> str:
+    model_name = kwargs["hashing_kv"].global_config["llm_model_name"]
+    return await lmdeploy_model_if_cache(
+        model_name,
+        prompt,
+        system_prompt=system_prompt,
+        history_messages=history_messages,
+        ## please specify chat_template if your local path does not follow original HF file name,
+        ## or model_name is a pytorch model on huggingface.co,
+        ## you can refer to https://github.com/InternLM/lmdeploy/blob/main/lmdeploy/model.py
+        ## for a list of chat_template available in lmdeploy.
+        chat_template="llama3",
+        # model_format ='awq', # if you are using awq quantization model.
+        # quant_policy=8, # if you want to use online kv cache, 4=kv int4, 8=kv int8.
+        **kwargs,
+    )
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=lmdeploy_model_complete,
+        llm_model_name="meta-llama/Llama-3.1-8B-Instruct",  # please use definite path for local model
+        embedding_func=EmbeddingFunc(
+            embedding_dim=384,
+            max_token_size=5000,
+            func=lambda texts: hf_embed(
+                texts,
+                tokenizer=AutoTokenizer.from_pretrained(
+                    "sentence-transformers/all-MiniLM-L6-v2"
+                ),
+                embed_model=AutoModel.from_pretrained(
+                    "sentence-transformers/all-MiniLM-L6-v2"
+                ),
+            ),
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+
+    # Insert example text
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Test different query modes
+    print("\nNaive Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="naive")
+        )
+    )
+
+    print("\nLocal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="local")
+        )
+    )
+
+    print("\nGlobal Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="global")
+        )
+    )
+
+    print("\nHybrid Search:")
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="hybrid")
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_nvidia_demo.py
+================================================
+import os
+import asyncio
+import nest_asyncio
+
+from lightrag import LightRAG, QueryParam
+from lightrag.llm import (
+    openai_complete_if_cache,
+    nvidia_openai_embed,
+)
+from lightrag.utils import EmbeddingFunc
+import numpy as np
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+# for custom llm_model_func
+from lightrag.utils import locate_json_string_body_from_string
+
+nest_asyncio.apply()
+
+WORKING_DIR = "./dickens"
+
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+
+# some method to use your API key (choose one)
+# NVIDIA_OPENAI_API_KEY = os.getenv("NVIDIA_OPENAI_API_KEY")
+NVIDIA_OPENAI_API_KEY = "nvapi-xxxx"  # your api key
+
+# using pre-defined function for nvidia LLM API. OpenAI compatible
+# llm_model_func = nvidia_openai_complete
+
+
+# If you trying to make custom llm_model_func to use llm model on NVIDIA API like other example:
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    result = await openai_complete_if_cache(
+        "nvidia/llama-3.1-nemotron-70b-instruct",
+        prompt,
+        system_prompt=system_prompt,
+        history_messages=history_messages,
+        api_key=NVIDIA_OPENAI_API_KEY,
+        base_url="https://integrate.api.nvidia.com/v1",
+        **kwargs,
+    )
+    if keyword_extraction:
+        return locate_json_string_body_from_string(result)
+    return result
+
+
+# custom embedding
+nvidia_embed_model = "nvidia/nv-embedqa-e5-v5"
+
+
+async def indexing_embedding_func(texts: list[str]) -> np.ndarray:
+    return await nvidia_openai_embed(
+        texts,
+        model=nvidia_embed_model,  # maximum 512 token
+        # model="nvidia/llama-3.2-nv-embedqa-1b-v1",
+        api_key=NVIDIA_OPENAI_API_KEY,
+        base_url="https://integrate.api.nvidia.com/v1",
+        input_type="passage",
+        trunc="END",  # handling on server side if input token is longer than maximum token
+        encode="float",
+    )
+
+
+async def query_embedding_func(texts: list[str]) -> np.ndarray:
+    return await nvidia_openai_embed(
+        texts,
+        model=nvidia_embed_model,  # maximum 512 token
+        # model="nvidia/llama-3.2-nv-embedqa-1b-v1",
+        api_key=NVIDIA_OPENAI_API_KEY,
+        base_url="https://integrate.api.nvidia.com/v1",
+        input_type="query",
+        trunc="END",  # handling on server side if input token is longer than maximum token
+        encode="float",
+    )
+
+
+# dimension are same
+async def get_embedding_dim():
+    test_text = ["This is a test sentence."]
+    embedding = await indexing_embedding_func(test_text)
+    embedding_dim = embedding.shape[1]
+    return embedding_dim
+
+
+# function test
+async def test_funcs():
+    result = await llm_model_func("How are you?")
+    print("llm_model_func: ", result)
+
+    result = await indexing_embedding_func(["How are you?"])
+    print("embedding_func: ", result)
+
+
+# asyncio.run(test_funcs())
+
+
+async def initialize_rag():
+    embedding_dimension = await get_embedding_dim()
+    print(f"Detected embedding dimension: {embedding_dimension}")
+
+    # lightRAG class during indexing
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        # llm_model_name="meta/llama3-70b-instruct", #un comment if
+        embedding_func=EmbeddingFunc(
+            embedding_dim=embedding_dimension,
+            max_token_size=512,  # maximum token size, somehow it's still exceed maximum number of token
+            # so truncate (trunc) parameter on embedding_func will handle it and try to examine the tokenizer used in LightRAG
+            # so you can adjust to be able to fit the NVIDIA model (future work)
+            func=indexing_embedding_func,
+        ),
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+async def main():
+    try:
+        # Initialize RAG instance
+        rag = await initialize_rag()
+
+        # reading file
+        with open("./book.txt", "r", encoding="utf-8") as f:
+            await rag.ainsert(f.read())
+
+        # Perform naive search
+        print("==============Naive===============")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?", param=QueryParam(mode="naive")
+            )
+        )
+
+        # Perform local search
+        print("==============local===============")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?", param=QueryParam(mode="local")
+            )
+        )
+
+        # Perform global search
+        print("==============global===============")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?",
+                param=QueryParam(mode="global"),
+            )
+        )
+
+        # Perform hybrid search
+        print("==============hybrid===============")
+        print(
+            await rag.aquery(
+                "What are the top themes in this story?",
+                param=QueryParam(mode="hybrid"),
+            )
+        )
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+
+
+
+================================================
+FILE: examples/unofficial-sample/lightrag_openai_neo4j_milvus_redis_demo.py
+================================================
+import os
+import asyncio
+from lightrag import LightRAG, QueryParam
+from lightrag.llm.ollama import ollama_embed, openai_complete_if_cache
+from lightrag.utils import EmbeddingFunc
+from lightrag.kg.shared_storage import initialize_pipeline_status
+
+# WorkingDir
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+WORKING_DIR = os.path.join(ROOT_DIR, "myKG")
+if not os.path.exists(WORKING_DIR):
+    os.mkdir(WORKING_DIR)
+print(f"WorkingDir: {WORKING_DIR}")
+
+# redis
+os.environ["REDIS_URI"] = "redis://localhost:6379"
+
+# neo4j
+BATCH_SIZE_NODES = 500
+BATCH_SIZE_EDGES = 100
+os.environ["NEO4J_URI"] = "neo4j://localhost:7687"
+os.environ["NEO4J_USERNAME"] = "neo4j"
+os.environ["NEO4J_PASSWORD"] = "12345678"
+
+# milvus
+os.environ["MILVUS_URI"] = "http://localhost:19530"
+os.environ["MILVUS_USER"] = "root"
+os.environ["MILVUS_PASSWORD"] = "Milvus"
+os.environ["MILVUS_DB_NAME"] = "lightrag"
+
+
+async def llm_model_func(
+    prompt, system_prompt=None, history_messages=[], keyword_extraction=False, **kwargs
+) -> str:
+    return await openai_complete_if_cache(
+        "deepseek-chat",
+        prompt,
+        system_prompt=system_prompt,
+        history_messages=history_messages,
+        api_key="",
+        base_url="",
+        **kwargs,
+    )
+
+
+embedding_func = EmbeddingFunc(
+    embedding_dim=768,
+    max_token_size=512,
+    func=lambda texts: ollama_embed(
+        texts, embed_model="shaw/dmeta-embedding-zh", host="http://117.50.173.35:11434"
+    ),
+)
+
+
+async def initialize_rag():
+    rag = LightRAG(
+        working_dir=WORKING_DIR,
+        llm_model_func=llm_model_func,
+        llm_model_max_token_size=32768,
+        embedding_func=embedding_func,
+        chunk_token_size=512,
+        chunk_overlap_token_size=256,
+        kv_storage="RedisKVStorage",
+        graph_storage="Neo4JStorage",
+        vector_storage="MilvusVectorDBStorage",
+        doc_status_storage="RedisKVStorage",
+    )
+
+    await rag.initialize_storages()
+    await initialize_pipeline_status()
+
+    return rag
+
+
+def main():
+    # Initialize RAG instance
+    rag = asyncio.run(initialize_rag())
+
+    with open("./book.txt", "r", encoding="utf-8") as f:
+        rag.insert(f.read())
+
+    # Perform naive search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="naive")
+        )
+    )
+
+    # Perform local search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="local")
+        )
+    )
+
+    # Perform global search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="global")
+        )
+    )
+
+    # Perform hybrid search
+    print(
+        rag.query(
+            "What are the top themes in this story?", param=QueryParam(mode="hybrid")
+        )
+    )
+
+
+if __name__ == "__main__":
+    main()
+
+

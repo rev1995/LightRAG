@@ -20,12 +20,22 @@ tenacity
 # LLM packages
 xlsxwriter>=3.1.0
 
-flask 
-streamlit 
-google-generativeai 
-sentence-transformers 
-sentencepiece 
-PyMuPDF 
-python-dotenv 
-aiolimiter 
+# Core LightRAG and ML dependencies
+google-generativeai
+sentence-transformers
+sentencepiece
+PyMuPDF
+python-dotenv
+aiolimiter
+
+# FastAPI Server dependencies
+fastapi
+uvicorn[standard]
+python-multipart
 requests
+
+# Streamlit UI dependencies
+streamlit
+
+# Optional but recommended for dependency management
+pipmaster

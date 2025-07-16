@@ -422,8 +422,7 @@ class ProductionRAGPipeline:
             for text in texts:
                 response = client.models.embed_content(
                     model=self.config.EMBEDDING_MODEL,
-                    contents=text,
-                    task_type="retrieval_document"
+                    content=text
                 )
                 embeddings.append(response.embedding)
             

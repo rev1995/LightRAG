@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # LightRAG Backend API
+  lightrag-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - WORKING_DIR=/app/rag_storage
+      - WORKSPACE=default
+      - LOG_LEVEL=INFO
+      - VERBOSE=false
+      - LLM_MODEL=gemini-2.0-flash
+      - EMBEDDING_MODEL=text-embedding-004
+      - ENABLE_RERANK=true
+      - DEFAULT_QUERY_MODE=mix
+    volumes:
+      - ./rag_storage:/app/rag_storage
+      - ./tokenizer_cache:/app/tokenizer_cache
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # LightRAG Frontend
+  lightrag-frontend:
+    build:
+      context: ./lightrag_webui
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+      - VITE_API_PROXY=http://localhost:8000
+      - VITE_API_ENDPOINTS=http://localhost:8000
+      - VITE_BACKEND_URL=http://localhost:8000
+    depends_on:
+      - lightrag-backend
+    restart: unless-stopped
+    volumes:
+      - ./lightrag_webui/src:/app/src
+      - ./lightrag_webui/public:/app/public
+
+networks:
+  default:
+    name: lightrag-network 

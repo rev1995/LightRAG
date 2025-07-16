@@ -680,3 +680,104 @@ export const checkEntityNameExists = async (entityName: string): Promise<boolean
     return false
   }
 }
+
+// --- New API functions for the production RAG backend ---
+
+/**
+ * Query the RAG system with the new backend
+ */
+export const queryRAG = async (request: QueryRequest): Promise<QueryResponse> => {
+  const response = await axiosInstance.post('/query', request)
+  return response.data
+}
+
+/**
+ * Insert documents into the RAG system
+ */
+export const insertDocuments = async (documents: string[]): Promise<{
+  total_documents: number
+  successful_insertions: number
+  results: any[]
+}> => {
+  const response = await axiosInstance.post('/insert', { documents })
+  return response.data
+}
+
+/**
+ * Clear cache with specified modes
+ */
+export const clearRAGCache = async (modes?: string[]): Promise<{
+  status: string
+  message: string
+  modes_cleared: any
+}> => {
+  const response = await axiosInstance.post('/clear_cache', { modes })
+  return response.data
+}
+
+/**
+ * Get token usage statistics
+ */
+export const getTokenStats = async (): Promise<{
+  total_requests: number
+  total_tokens: number
+  prompt_tokens: number
+  completion_tokens: number
+  average_tokens_per_request: number
+  cost_estimation: number
+}> => {
+  const response = await axiosInstance.get('/token_stats')
+  return response.data
+}
+
+/**
+ * Upload a single document file
+ */
+export const uploadDocumentFile = async (file: File): Promise<{
+  filename: string
+  status: string
+  result: any
+}> => {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await axiosInstance.post('/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+  return response.data
+}
+
+/**
+ * Upload multiple document files
+ */
+export const uploadDocumentFiles = async (files: File[]): Promise<{
+  filenames: string[]
+  status: string
+  result: any
+}> => {
+  const formData = new FormData()
+  for (const file of files) {
+    formData.append('files', file)
+  }
+
+  const response = await axiosInstance.post('/upload_batch', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+  return response.data
+}
+
+/**
+ * Check health status of the new backend
+ */
+export const checkRAGHealth = async (): Promise<{
+  status: string
+  message: string
+  pipeline_initialized: boolean
+}> => {
+  const response = await axiosInstance.get('/health')
+  return response.data
+}

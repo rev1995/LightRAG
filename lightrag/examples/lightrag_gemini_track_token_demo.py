@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from lightrag.utils import EmbeddingFunc
 from lightrag import LightRAG, QueryParam
 from lightrag.kg.shared_storage import initialize_pipeline_status
-from lightrag.llm.siliconcloud import siliconcloud_embedding
+from google import genai
 from lightrag.utils import setup_logger
 from lightrag.utils import TokenTracker
 
@@ -21,7 +21,7 @@ nest_asyncio.apply()
 
 load_dotenv()
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-siliconflow_api_key = os.getenv("SILICONFLOW_API_KEY")
+# Using Gemini for both LLM and embeddings
 
 WORKING_DIR = "./dickens"
 
@@ -82,12 +82,19 @@ async def llm_model_func(
 
 
 async def embedding_func(texts: list[str]) -> np.ndarray:
-    return await siliconcloud_embedding(
-        texts,
-        model="BAAI/bge-m3",
-        api_key=siliconflow_api_key,
-        max_token_size=512,
-    )
+    """Gemini native embedding function"""
+    client = genai.Client(api_key=gemini_api_key)
+    
+    embeddings = []
+    for text in texts:
+        response = client.models.embed_content(
+            model="text-embedding-004",
+            content=text,
+            task_type="retrieval_document"
+        )
+        embeddings.append(response.embedding)
+    
+    return np.array(embeddings)
 
 
 async def initialize_rag():
@@ -99,7 +106,7 @@ async def initialize_rag():
         embedding_cache_config={"enabled": True, "similarity_threshold": 0.90},
         llm_model_func=llm_model_func,
         embedding_func=EmbeddingFunc(
-            embedding_dim=1024,
+            embedding_dim=768,
             max_token_size=8192,
             func=embedding_func,
         ),

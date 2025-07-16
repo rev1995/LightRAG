@@ -15,6 +15,7 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 import { useSettingsStore } from '@/stores/settings'
 import { useTranslation } from 'react-i18next'
+import { Textarea } from '@/components/ui/Textarea'
 
 export default function QuerySettings() {
   const { t } = useTranslation()
@@ -68,6 +69,56 @@ export default function QuerySettings() {
                   </SelectGroup>
                 </SelectContent>
               </Select>
+            </>
+
+            {/* User Prompt */}
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <label htmlFor="user_prompt" className="ml-1 cursor-help">
+                      User Prompt
+                    </label>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Custom prompt to guide LLM on how to process retrieved results. Does not participate in RAG retrieval phase.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <Textarea
+                id="user_prompt"
+                value={querySettings.user_prompt || ''}
+                onChange={(e) => handleChange('user_prompt', e.target.value)}
+                placeholder="e.g., For diagrams, use mermaid format with English/Pinyin node names and Chinese display labels"
+                className="min-h-[60px] resize-none"
+                rows={3}
+              />
+            </>
+
+            {/* Enable Rerank */}
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <label htmlFor="enable_rerank" className="ml-1 cursor-help">
+                      Enable Rerank
+                    </label>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Enable reranking for retrieved text chunks to improve relevance</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="enable_rerank"
+                  checked={querySettings.enable_rerank !== false}
+                  onCheckedChange={(checked) => handleChange('enable_rerank', checked)}
+                />
+                <label htmlFor="enable_rerank" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Enable
+                </label>
+              </div>
             </>
 
             {/* Response Format */}
@@ -270,7 +321,7 @@ export default function QuerySettings() {
                   onBlur={(e) => {
                     const value = e.target.value
                     if (value === '' || isNaN(parseInt(value))) {
-                      handleChange('max_total_tokens', 1000)
+                      handleChange('max_total_tokens', 32000)
                     }
                   }}
                   min={1}
@@ -305,128 +356,92 @@ export default function QuerySettings() {
                   onBlur={(e) => {
                     const value = e.target.value
                     if (value === '' || isNaN(parseInt(value))) {
-                      handleChange('history_turns', 0)
+                      handleChange('history_turns', 3)
                     }
                   }}
                   min={0}
                   placeholder={t('retrievePanel.querySettings.historyTurnsPlaceholder')}
-                  className="h-9"
                 />
               </div>
             </>
 
-            {/* User Prompt */}
+            {/* Only Need Context */}
             <>
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <label htmlFor="user_prompt" className="ml-1 cursor-help">
-                      {t('retrievePanel.querySettings.userPrompt')}
+                    <label htmlFor="only_need_context" className="ml-1 cursor-help">
+                      Only Need Context
                     </label>
                   </TooltipTrigger>
                   <TooltipContent side="left">
-                    <p>{t('retrievePanel.querySettings.userPromptTooltip')}</p>
+                    <p>Return only retrieved context without generating a response</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              <div>
-                <Input
-                  id="user_prompt"
-                  value={querySettings.user_prompt}
-                  onChange={(e) => handleChange('user_prompt', e.target.value)}
-                  placeholder={t('retrievePanel.querySettings.userPromptPlaceholder')}
-                  className="h-9"
-                />
-              </div>
-            </>
-
-            {/* Toggle Options */}
-            <>
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <label htmlFor="enable_rerank" className="flex-1 ml-1 cursor-help">
-                        {t('retrievePanel.querySettings.enableRerank')}
-                      </label>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>{t('retrievePanel.querySettings.enableRerankTooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+              <div className="flex items-center space-x-2">
                 <Checkbox
-                  className="mr-1 cursor-pointer"
-                  id="enable_rerank"
-                  checked={querySettings.enable_rerank}
-                  onCheckedChange={(checked) => handleChange('enable_rerank', checked)}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <label htmlFor="only_need_context" className="flex-1 ml-1 cursor-help">
-                        {t('retrievePanel.querySettings.onlyNeedContext')}
-                      </label>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>{t('retrievePanel.querySettings.onlyNeedContextTooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <Checkbox
-                  className="mr-1 cursor-pointer"
                   id="only_need_context"
-                  checked={querySettings.only_need_context}
+                  checked={querySettings.only_need_context || false}
                   onCheckedChange={(checked) => handleChange('only_need_context', checked)}
                 />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <label htmlFor="only_need_prompt" className="flex-1 ml-1 cursor-help">
-                        {t('retrievePanel.querySettings.onlyNeedPrompt')}
-                      </label>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>{t('retrievePanel.querySettings.onlyNeedPromptTooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <Checkbox
-                  className="mr-1 cursor-pointer"
-                  id="only_need_prompt"
-                  checked={querySettings.only_need_prompt}
-                  onCheckedChange={(checked) => handleChange('only_need_prompt', checked)}
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <label htmlFor="stream" className="flex-1 ml-1 cursor-help">
-                        {t('retrievePanel.querySettings.streamResponse')}
-                      </label>
-                    </TooltipTrigger>
-                    <TooltipContent side="left">
-                      <p>{t('retrievePanel.querySettings.streamResponseTooltip')}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <Checkbox
-                  className="mr-1 cursor-pointer"
-                  id="stream"
-                  checked={querySettings.stream}
-                  onCheckedChange={(checked) => handleChange('stream', checked)}
-                />
+                <label htmlFor="only_need_context" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Enable
+                </label>
               </div>
             </>
 
+            {/* Only Need Prompt */}
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <label htmlFor="only_need_prompt" className="ml-1 cursor-help">
+                      Only Need Prompt
+                    </label>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Return only the generated prompt without producing a response</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="only_need_prompt"
+                  checked={querySettings.only_need_prompt || false}
+                  onCheckedChange={(checked) => handleChange('only_need_prompt', checked)}
+                />
+                <label htmlFor="only_need_prompt" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Enable
+                </label>
+              </div>
+            </>
+
+            {/* Stream */}
+            <>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <label htmlFor="stream" className="ml-1 cursor-help">
+                      Stream Response
+                    </label>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Enable streaming output for real-time responses</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="stream"
+                  checked={querySettings.stream || false}
+                  onCheckedChange={(checked) => handleChange('stream', checked)}
+                />
+                <label htmlFor="stream" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Enable
+                </label>
+              </div>
+            </>
           </div>
         </div>
       </CardContent>

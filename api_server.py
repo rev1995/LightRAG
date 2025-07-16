@@ -15,7 +15,7 @@ import os
 import asyncio
 import logging
 from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -205,6 +205,18 @@ async def login(request: LoginRequest):
     """Login endpoint (simplified - always succeeds)"""
     # For this demo, we'll accept any credentials
     # In production, you'd want proper authentication
+    logger.info(f"Login attempt for user: {request.username}")
+    return LoginResponse(
+        access_token="demo_token_12345",
+        message="Login successful (demo mode)"
+    )
+
+@app.post("/login", response_model=LoginResponse)
+async def login_form(username: str = Form(...), password: str = Form(...)):
+    """Login endpoint for form data (multipart/form-data)"""
+    # For this demo, we'll accept any credentials
+    # In production, you'd want proper authentication
+    logger.info(f"Login attempt for user: {username}")
     return LoginResponse(
         access_token="demo_token_12345",
         message="Login successful (demo mode)"

@@ -3,11 +3,10 @@ import { SiteInfo, webuiPrefix } from '@/lib/constants'
 import AppSettings from '@/components/AppSettings'
 import { TabsList, TabsTrigger } from '@/components/ui/Tabs'
 import { useSettingsStore } from '@/stores/settings'
-import { useAuthStore } from '@/stores/state'
+import { useBackendState } from '@/stores/state'
 import { cn } from '@/lib/utils'
 import { useTranslation } from 'react-i18next'
-import { navigationService } from '@/services/navigation'
-import { ZapIcon, GithubIcon, LogOutIcon } from 'lucide-react'
+import { ZapIcon, GithubIcon } from 'lucide-react'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip'
 
 interface NavigationTabProps {
@@ -56,15 +55,11 @@ function TabsNavigation() {
 
 export default function SiteHeader() {
   const { t } = useTranslation()
-  const { isGuestMode, coreVersion, apiVersion, username, webuiTitle, webuiDescription } = useAuthStore()
+  const { coreVersion, apiVersion, webuiTitle, webuiDescription } = useBackendState.use
 
   const versionDisplay = (coreVersion && apiVersion)
     ? `${coreVersion}/${apiVersion}`
     : null;
-
-  const handleLogout = () => {
-    navigationService.navigateToLogin();
-  }
 
   return (
     <header className="border-border/40 bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50 flex h-10 w-full border-b px-4 backdrop-blur">
@@ -96,11 +91,6 @@ export default function SiteHeader() {
 
       <div className="flex h-10 flex-1 items-center justify-center">
         <TabsNavigation />
-        {isGuestMode && (
-          <div className="ml-2 self-center px-2 py-1 text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200 rounded-md">
-            {t('login.guestMode', 'Guest Mode')}
-          </div>
-        )}
       </div>
 
       <nav className="w-[200px] flex items-center justify-end">
@@ -116,17 +106,6 @@ export default function SiteHeader() {
             </a>
           </Button>
           <AppSettings />
-          {!isGuestMode && (
-            <Button
-              variant="ghost"
-              size="icon"
-              side="bottom"
-              tooltip={`${t('header.logout')} (${username})`}
-              onClick={handleLogout}
-            >
-              <LogOutIcon className="size-4" aria-hidden="true" />
-            </Button>
-          )}
         </div>
       </nav>
     </header>

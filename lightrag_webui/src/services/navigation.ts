@@ -1,5 +1,5 @@
 import { NavigateFunction } from 'react-router-dom';
-import { useAuthStore, useBackendState } from '@/stores/state';
+import { useBackendState } from '@/stores/state';
 import { useGraphStore } from '@/stores/graph';
 import { useSettingsStore } from '@/stores/settings';
 
@@ -39,7 +39,7 @@ class NavigationService {
       useSettingsStore.getState().setRetrievalHistory([]);
     }
 
-    // Clear authentication state
+    // Clear session storage
     sessionStorage.clear();
 
     if (sigma) {
@@ -47,29 +47,6 @@ class NavigationService {
       sigma.kill();
       useGraphStore.getState().setSigmaInstance(null);
     }
-  }
-
-  /**
-   * Navigate to login page and reset application state
-   */
-  navigateToLogin() {
-    if (!this.navigate) {
-      console.error('Navigation function not set');
-      return;
-    }
-
-    // Store current username before logout for comparison during next login
-    const currentUsername = useAuthStore.getState().username;
-    if (currentUsername) {
-      localStorage.setItem('LIGHTRAG-PREVIOUS-USER', currentUsername);
-    }
-
-    // Reset application state but preserve history
-    // History will be cleared on next login if the user changes
-    this.resetAllApplicationState(true);
-    useAuthStore.getState().logout();
-
-    this.navigate('/login');
   }
 
   navigateToHome() {

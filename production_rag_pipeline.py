@@ -424,7 +424,7 @@ class ProductionRAGPipeline:
                     model=self.config.EMBEDDING_MODEL,
                     contents=text
                 )
-                embeddings.append(response.embedding)
+                embeddings.append(response.embeddings)
             
             return np.array(embeddings)
         except Exception as e:

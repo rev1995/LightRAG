@@ -91,7 +91,7 @@ async def embedding_func(texts: list[str]) -> np.ndarray:
             model="text-embedding-004",
             contents=text
         )
-        embeddings.append(response.embedding)
+        embeddings.append(response.embeddings)
     
     return np.array(embeddings)
 

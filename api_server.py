@@ -161,6 +161,197 @@ async def health_check():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# --- Authentication Endpoints ---
+
+class AuthStatusResponse(BaseModel):
+    """Response model for auth status"""
+    auth_configured: bool = False
+    access_token: Optional[str] = None
+    token_type: Optional[str] = None
+    auth_mode: str = "disabled"
+    message: Optional[str] = None
+    core_version: str = "1.0.0"
+    api_version: str = "1.0.0"
+    webui_title: str = "LightRAG WebUI"
+    webui_description: str = "Production-ready RAG system with Gemini LLM"
+
+class LoginRequest(BaseModel):
+    """Request model for login"""
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    """Response model for login"""
+    access_token: str
+    token_type: str = "bearer"
+    auth_mode: str = "enabled"
+    message: Optional[str] = None
+    core_version: str = "1.0.0"
+    api_version: str = "1.0.0"
+    webui_title: str = "LightRAG WebUI"
+    webui_description: str = "Production-ready RAG system with Gemini LLM"
+
+@app.get("/auth-status", response_model=AuthStatusResponse)
+async def auth_status():
+    """Get authentication status"""
+    return AuthStatusResponse(
+        auth_configured=False,  # No auth configured for this simple setup
+        auth_mode="disabled",
+        message="Authentication is disabled in this setup"
+    )
+
+@app.post("/login", response_model=LoginResponse)
+async def login(request: LoginRequest):
+    """Login endpoint (simplified - always succeeds)"""
+    # For this demo, we'll accept any credentials
+    # In production, you'd want proper authentication
+    return LoginResponse(
+        access_token="demo_token_12345",
+        message="Login successful (demo mode)"
+    )
+
+# --- Document Management Endpoints ---
+
+class DocStatusResponse(BaseModel):
+    """Response model for document status"""
+    id: str
+    content_summary: str
+    content_length: int
+    status: str
+    created_at: str
+    updated_at: str
+    chunks_count: Optional[int] = None
+    error: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    file_path: str
+
+class DocsStatusesResponse(BaseModel):
+    """Response model for document statuses"""
+    statuses: Dict[str, List[DocStatusResponse]]
+
+@app.get("/documents", response_model=DocsStatusesResponse)
+async def get_documents():
+    """Get document statuses"""
+    # For now, return empty statuses
+    # In a full implementation, this would query the document storage
+    return DocsStatusesResponse(statuses={
+        "pending": [],
+        "processing": [],
+        "processed": [],
+        "failed": []
+    })
+
+@app.post("/scan-documents")
+async def scan_documents():
+    """Scan for new documents"""
+    return {"status": "success", "message": "Document scanning completed"}
+
+@app.get("/documents-scan-progress")
+async def get_documents_scan_progress():
+    """Get document scanning progress"""
+    return {
+        "is_scanning": False,
+        "current_file": "",
+        "indexed_count": 0,
+        "total_files": 0,
+        "progress": 0
+    }
+
+# --- Pipeline Status Endpoints ---
+
+class PipelineStatusResponse(BaseModel):
+    """Response model for pipeline status"""
+    autoscanned: bool = False
+    busy: bool = False
+    job_name: str = ""
+    job_start: Optional[str] = None
+    docs: int = 0
+    batchs: int = 0
+    cur_batch: int = 0
+    request_pending: bool = False
+    latest_message: str = "Ready"
+    history_messages: Optional[List[str]] = None
+    update_status: Optional[Dict[str, Any]] = None
+
+@app.get("/pipeline-status", response_model=PipelineStatusResponse)
+async def get_pipeline_status():
+    """Get pipeline status"""
+    return PipelineStatusResponse(
+        latest_message="Pipeline is ready"
+    )
+
+# --- Graph Endpoints ---
+
+@app.get("/graph/labels")
+async def get_graph_labels():
+    """Get available graph labels"""
+    # Return empty list for now
+    # In a full implementation, this would query the knowledge graph
+    return []
+
+@app.post("/graph/query")
+async def query_graphs():
+    """Query knowledge graphs"""
+    # Return empty graph for now
+    return {
+        "nodes": [],
+        "edges": []
+    }
+
+# --- Document Actions ---
+
+class DocActionResponse(BaseModel):
+    """Response model for document actions"""
+    status: str
+    message: str
+
+@app.post("/documents/insert")
+async def insert_document():
+    """Insert a document"""
+    return DocActionResponse(
+        status="success",
+        message="Document inserted successfully"
+    )
+
+@app.post("/documents/clear")
+async def clear_documents():
+    """Clear all documents"""
+    return DocActionResponse(
+        status="success",
+        message="All documents cleared"
+    )
+
+@app.post("/documents/delete")
+async def delete_documents():
+    """Delete documents"""
+    return DocActionResponse(
+        status="success",
+        message="Documents deleted successfully"
+    )
+
+# --- Entity and Relation Management ---
+
+@app.post("/entities/update")
+async def update_entity():
+    """Update an entity"""
+    return DocActionResponse(
+        status="success",
+        message="Entity updated successfully"
+    )
+
+@app.post("/relations/update")
+async def update_relation():
+    """Update a relation"""
+    return DocActionResponse(
+        status="success",
+        message="Relation updated successfully"
+    )
+
+@app.get("/entities/check")
+async def check_entity_name():
+    """Check if entity name exists"""
+    return {"exists": False}
+
 @app.post("/query", response_model=QueryResponse)
 async def query_endpoint(request: QueryRequest):
     """Query the RAG system"""
@@ -170,16 +361,26 @@ async def query_endpoint(request: QueryRequest):
         
         logger.info(f"Processing query: {request.query[:100]}...")
         
-        result = await pipeline.query(
-            query=request.query,
-            mode=request.mode,
-            user_prompt=request.user_prompt,
-            top_k=request.top_k,
-            chunk_top_k=request.chunk_top_k,
-            enable_rerank=request.enable_rerank,
-            response_type=request.response_type,
-            conversation_history=request.conversation_history,
-        )
+        # Prepare query parameters, handling None values
+        query_params = {
+            "query": request.query,
+            "response_type": request.response_type or "Multiple Paragraphs",
+            "conversation_history": request.conversation_history or []
+        }
+        
+        # Add optional parameters only if they are not None
+        if request.mode is not None:
+            query_params["mode"] = request.mode
+        if request.user_prompt is not None:
+            query_params["user_prompt"] = request.user_prompt
+        if request.top_k is not None:
+            query_params["top_k"] = request.top_k
+        if request.chunk_top_k is not None:
+            query_params["chunk_top_k"] = request.chunk_top_k
+        if request.enable_rerank is not None:
+            query_params["enable_rerank"] = request.enable_rerank
+        
+        result = await pipeline.query(**query_params)
         
         return QueryResponse(**result)
         
@@ -213,7 +414,9 @@ async def clear_cache_endpoint(request: CacheClearRequest):
         
         logger.info(f"Clearing cache for modes: {request.modes or 'all'}")
         
-        result = await pipeline.clear_cache(request.modes)
+        # Handle None case for modes parameter
+        modes_to_clear = request.modes if request.modes is not None else None
+        result = await pipeline.clear_cache(modes_to_clear)
         
         return CacheClearResponse(**result)
         

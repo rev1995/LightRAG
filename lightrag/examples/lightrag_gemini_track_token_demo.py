@@ -89,7 +89,7 @@ async def embedding_func(texts: list[str]) -> np.ndarray:
     for text in texts:
         response = client.models.embed_content(
             model="text-embedding-004",
-            content=text,
+            contents=text,
             task_type="retrieval_document"
         )
         embeddings.append(response.embedding)

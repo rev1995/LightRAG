@@ -607,15 +607,33 @@ class ProductionRAGPipeline:
         try:
             self.logger.info(f"Clearing cache for modes: {modes or 'all'}")
             
+            # Convert custom mode names to LightRAG valid modes
+            mode_mapping = {
+                "query": "default",
+                "entity_extract": "default", 
+                "relation_extract": "default",
+                "summary": "default"
+            }
+            
             if modes:
-                result = await self.rag.clear_cache_by_modes(modes)
+                # Map custom modes to LightRAG modes
+                lightrag_modes = []
+                for mode in modes:
+                    if mode in mode_mapping:
+                        lightrag_modes.append(mode_mapping[mode])
+                    else:
+                        # If it's already a valid LightRAG mode, use it directly
+                        lightrag_modes.append(mode)
+                
+                # Remove duplicates
+                lightrag_modes = list(set(lightrag_modes))
+                await self.rag.aclear_cache(lightrag_modes)
             else:
                 # Clear all caches
-                all_modes = ["query", "entity_extract", "relation_extract", "summary"]
-                result = await self.rag.clear_cache_by_modes(all_modes)
+                await self.rag.aclear_cache()
             
             return {
-                "status": "success" if result else "failed",
+                "status": "success",
                 "message": f"Cache cleared for modes: {modes or 'all'}",
                 "modes_cleared": modes or "all"
             }

@@ -37,6 +37,7 @@ from lightrag.utils import EmbeddingFunc, setup_logger, TokenTracker, Tokenizer
 from lightrag.kg.shared_storage import initialize_pipeline_status
 from lightrag.rerank import custom_rerank, RerankModel
 from lightrag.llm_rerank import LLMReranker, AdaptiveLLMReranker, create_llm_reranker
+from llm_rerank_robust import create_robust_llm_reranker
 
 # Apply nest_asyncio to solve event loop issues
 nest_asyncio.apply()
@@ -437,28 +438,30 @@ class ProductionRAGPipeline:
             raise
     
     async def _rerank_func(self, query: str, documents: List[Dict], top_k: int = None, **kwargs):
-        """LLM-based rerank function using the same LLM for generation and reranking"""
+        """Robust LLM-based rerank function with better error handling"""
         if not self.config.ENABLE_RERANK:
             return documents[:top_k] if top_k else documents
         
         try:
-            # Use LLM-based reranking instead of external service
-            llm_reranker = LLMReranker(
+            # Use robust LLM-based reranking
+            robust_reranker = create_robust_llm_reranker(
                 llm_func=self._llm_model_func,
-                batch_size=self.config.RERANK_BATCH_SIZE,
+                max_retries=3,
+                retry_delay=2.0,  # Increased delay for rate limiting
                 max_concurrent=self.config.RERANK_MAX_CONCURRENT,
-                cache_enabled=self.config.RERANK_CACHE_ENABLED,
+                batch_size=self.config.RERANK_BATCH_SIZE,
+                timeout=45.0,  # Increased timeout
+                enable_cache=self.config.RERANK_CACHE_ENABLED,
                 strategy=self.config.RERANK_STRATEGY
             )
             
-            return await llm_reranker.rerank(
+            return await robust_reranker.rerank(
                 query=query,
                 documents=documents,
-                top_k=top_k or self.config.CHUNK_TOP_K,
-                **kwargs,
+                top_k=top_k or self.config.CHUNK_TOP_K
             )
         except Exception as e:
-            self.logger.warning(f"LLM rerank failed, returning original documents: {e}")
+            self.logger.warning(f"Robust LLM rerank failed, returning original documents: {e}")
             return documents[:top_k] if top_k else documents
     
     async def initialize(self):

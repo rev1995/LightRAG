@@ -91,7 +91,9 @@ async def embedding_func(texts: list[str]) -> np.ndarray:
             model="text-embedding-004",
             contents=text
         )
-        embeddings.append(response.embeddings)
+        # Extract the actual embedding values from ContentEmbedding object
+        embedding_values = response.embeddings[0].values
+        embeddings.append(embedding_values)
     
     return np.array(embeddings)
 

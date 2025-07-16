@@ -349,11 +349,14 @@ class ProductionRAGPipeline:
     def _setup_gemini_tokenizer(self):
         """Setup Gemini tokenizer for efficient chunking"""
         try:
-            # Use tiktoken for Gemini tokenization
-            self.tokenizer = tiktoken.get_encoding("cl100k_base")
-            self.logger.info("Gemini tokenizer initialized successfully")
+            # Use GemmaTokenizer for Gemini tokenization
+            self.tokenizer = GemmaTokenizer(
+                model_name=self.config.LLM_MODEL,
+                tokenizer_dir=self.config.TOKENIZER_DIR
+            )
+            self.logger.info("GemmaTokenizer initialized successfully")
         except Exception as e:
-            self.logger.warning(f"Failed to initialize Gemini tokenizer: {e}")
+            self.logger.warning(f"Failed to initialize GemmaTokenizer: {e}")
             self.tokenizer = None
     
     async def _llm_model_func(
@@ -424,7 +427,9 @@ class ProductionRAGPipeline:
                     model=self.config.EMBEDDING_MODEL,
                     contents=text
                 )
-                embeddings.append(response.embeddings)
+                # Extract the actual embedding values from ContentEmbedding object
+                embedding_values = response.embeddings[0].values
+                embeddings.append(embedding_values)
             
             return np.array(embeddings)
         except Exception as e:

@@ -9,17 +9,21 @@ This server wraps the ProductionRAGPipeline and exposes endpoints for:
 - Clearing cache
 - Getting token statistics
 - Health checks
+- Document management
+- Graph visualization
+- Pipeline status
 """
 
 import os
 import asyncio
 import logging
 from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 import uvicorn
+from pathlib import Path
 
 # Import the production pipeline
 from production_rag_pipeline import ProductionRAGPipeline, RAGConfig
@@ -104,6 +108,58 @@ class HealthResponse(BaseModel):
     message: str
     pipeline_initialized: bool
 
+# Document management models
+class DocStatusResponse(BaseModel):
+    """Response model for document status"""
+    id: str
+    content_summary: str
+    content_length: int
+    status: str
+    created_at: str
+    updated_at: str
+    chunks_count: Optional[int] = None
+    error: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    file_path: str
+
+class DocsStatusesResponse(BaseModel):
+    """Response model for document statuses"""
+    statuses: Dict[str, List[DocStatusResponse]]
+
+class PipelineStatusResponse(BaseModel):
+    """Response model for pipeline status"""
+    autoscanned: bool = False
+    busy: bool = False
+    job_name: str = "Default Job"
+    job_start: Optional[str] = None
+    docs: int = 0
+    batchs: int = 0
+    cur_batch: int = 0
+    request_pending: bool = False
+    latest_message: str = ""
+    history_messages: Optional[List[str]] = None
+    update_status: Optional[Dict[str, Any]] = None
+
+# Graph models
+class LightragNodeType(BaseModel):
+    """Model for graph node"""
+    id: str
+    labels: List[str]
+    properties: Dict[str, Any]
+
+class LightragEdgeType(BaseModel):
+    """Model for graph edge"""
+    id: str
+    source: str
+    target: str
+    type: str
+    properties: Dict[str, Any]
+
+class LightragGraphType(BaseModel):
+    """Model for knowledge graph"""
+    nodes: List[LightragNodeType]
+    edges: List[LightragEdgeType]
+
 # --- Startup and Shutdown Events ---
 
 @app.on_event("startup")
@@ -161,209 +217,6 @@ async def health_check():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- Authentication Endpoints ---
-
-class AuthStatusResponse(BaseModel):
-    """Response model for auth status"""
-    auth_configured: bool = False
-    access_token: Optional[str] = None
-    token_type: Optional[str] = None
-    auth_mode: str = "disabled"
-    message: Optional[str] = None
-    core_version: str = "1.0.0"
-    api_version: str = "1.0.0"
-    webui_title: str = "LightRAG WebUI"
-    webui_description: str = "Production-ready RAG system with Gemini LLM"
-
-class LoginRequest(BaseModel):
-    """Request model for login"""
-    username: str
-    password: str
-
-class LoginResponse(BaseModel):
-    """Response model for login"""
-    access_token: str
-    token_type: str = "bearer"
-    auth_mode: str = "enabled"
-    message: Optional[str] = None
-    core_version: str = "1.0.0"
-    api_version: str = "1.0.0"
-    webui_title: str = "LightRAG WebUI"
-    webui_description: str = "Production-ready RAG system with Gemini LLM"
-
-@app.get("/auth-status", response_model=AuthStatusResponse)
-async def auth_status():
-    """Get authentication status"""
-    return AuthStatusResponse(
-        auth_configured=False,  # No auth configured for this simple setup
-        auth_mode="disabled",
-        message="Authentication is disabled in this setup"
-    )
-
-@app.post("/login", response_model=LoginResponse)
-async def login(request: LoginRequest):
-    """Login endpoint (simplified - always succeeds)"""
-    # For this demo, we'll accept any credentials
-    # In production, you'd want proper authentication
-    logger.info(f"Login attempt for user: {request.username}")
-    return LoginResponse(
-        access_token="demo_token_12345",
-        message="Login successful (demo mode)"
-    )
-
-@app.post("/login", response_model=LoginResponse)
-async def login_form(username: str = Form(...), password: str = Form(...)):
-    """Login endpoint for form data (multipart/form-data)"""
-    # For this demo, we'll accept any credentials
-    # In production, you'd want proper authentication
-    logger.info(f"Login attempt for user: {username}")
-    return LoginResponse(
-        access_token="demo_token_12345",
-        message="Login successful (demo mode)"
-    )
-
-# --- Document Management Endpoints ---
-
-class DocStatusResponse(BaseModel):
-    """Response model for document status"""
-    id: str
-    content_summary: str
-    content_length: int
-    status: str
-    created_at: str
-    updated_at: str
-    chunks_count: Optional[int] = None
-    error: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = None
-    file_path: str
-
-class DocsStatusesResponse(BaseModel):
-    """Response model for document statuses"""
-    statuses: Dict[str, List[DocStatusResponse]]
-
-@app.get("/documents", response_model=DocsStatusesResponse)
-async def get_documents():
-    """Get document statuses"""
-    # For now, return empty statuses
-    # In a full implementation, this would query the document storage
-    return DocsStatusesResponse(statuses={
-        "pending": [],
-        "processing": [],
-        "processed": [],
-        "failed": []
-    })
-
-@app.post("/scan-documents")
-async def scan_documents():
-    """Scan for new documents"""
-    return {"status": "success", "message": "Document scanning completed"}
-
-@app.get("/documents-scan-progress")
-async def get_documents_scan_progress():
-    """Get document scanning progress"""
-    return {
-        "is_scanning": False,
-        "current_file": "",
-        "indexed_count": 0,
-        "total_files": 0,
-        "progress": 0
-    }
-
-# --- Pipeline Status Endpoints ---
-
-class PipelineStatusResponse(BaseModel):
-    """Response model for pipeline status"""
-    autoscanned: bool = False
-    busy: bool = False
-    job_name: str = ""
-    job_start: Optional[str] = None
-    docs: int = 0
-    batchs: int = 0
-    cur_batch: int = 0
-    request_pending: bool = False
-    latest_message: str = "Ready"
-    history_messages: Optional[List[str]] = None
-    update_status: Optional[Dict[str, Any]] = None
-
-@app.get("/pipeline-status", response_model=PipelineStatusResponse)
-async def get_pipeline_status():
-    """Get pipeline status"""
-    return PipelineStatusResponse(
-        latest_message="Pipeline is ready"
-    )
-
-# --- Graph Endpoints ---
-
-@app.get("/graph/labels")
-async def get_graph_labels():
-    """Get available graph labels"""
-    # Return empty list for now
-    # In a full implementation, this would query the knowledge graph
-    return []
-
-@app.post("/graph/query")
-async def query_graphs():
-    """Query knowledge graphs"""
-    # Return empty graph for now
-    return {
-        "nodes": [],
-        "edges": []
-    }
-
-# --- Document Actions ---
-
-class DocActionResponse(BaseModel):
-    """Response model for document actions"""
-    status: str
-    message: str
-
-@app.post("/documents/insert")
-async def insert_document():
-    """Insert a document"""
-    return DocActionResponse(
-        status="success",
-        message="Document inserted successfully"
-    )
-
-@app.post("/documents/clear")
-async def clear_documents():
-    """Clear all documents"""
-    return DocActionResponse(
-        status="success",
-        message="All documents cleared"
-    )
-
-@app.post("/documents/delete")
-async def delete_documents():
-    """Delete documents"""
-    return DocActionResponse(
-        status="success",
-        message="Documents deleted successfully"
-    )
-
-# --- Entity and Relation Management ---
-
-@app.post("/entities/update")
-async def update_entity():
-    """Update an entity"""
-    return DocActionResponse(
-        status="success",
-        message="Entity updated successfully"
-    )
-
-@app.post("/relations/update")
-async def update_relation():
-    """Update a relation"""
-    return DocActionResponse(
-        status="success",
-        message="Relation updated successfully"
-    )
-
-@app.get("/entities/check")
-async def check_entity_name():
-    """Check if entity name exists"""
-    return {"exists": False}
-
 @app.post("/query", response_model=QueryResponse)
 async def query_endpoint(request: QueryRequest):
     """Query the RAG system"""
@@ -373,26 +226,25 @@ async def query_endpoint(request: QueryRequest):
         
         logger.info(f"Processing query: {request.query[:100]}...")
         
-        # Prepare query parameters, handling None values
-        query_params = {
-            "query": request.query,
-            "response_type": request.response_type or "Multiple Paragraphs",
-            "conversation_history": request.conversation_history or []
-        }
+        # Build query parameters, only passing non-None values
+        query_kwargs = {"query": request.query}
         
-        # Add optional parameters only if they are not None
         if request.mode is not None:
-            query_params["mode"] = request.mode
+            query_kwargs["mode"] = request.mode
         if request.user_prompt is not None:
-            query_params["user_prompt"] = request.user_prompt
+            query_kwargs["user_prompt"] = request.user_prompt
         if request.top_k is not None:
-            query_params["top_k"] = request.top_k
+            query_kwargs["top_k"] = request.top_k
         if request.chunk_top_k is not None:
-            query_params["chunk_top_k"] = request.chunk_top_k
+            query_kwargs["chunk_top_k"] = request.chunk_top_k
         if request.enable_rerank is not None:
-            query_params["enable_rerank"] = request.enable_rerank
+            query_kwargs["enable_rerank"] = request.enable_rerank
+        if request.response_type is not None:
+            query_kwargs["response_type"] = request.response_type
+        if request.conversation_history is not None:
+            query_kwargs["conversation_history"] = request.conversation_history
         
-        result = await pipeline.query(**query_params)
+        result = await pipeline.query(**query_kwargs)
         
         return QueryResponse(**result)
         
@@ -424,11 +276,7 @@ async def clear_cache_endpoint(request: CacheClearRequest):
         if not pipeline:
             raise HTTPException(status_code=503, detail="Pipeline not initialized")
         
-        logger.info(f"Clearing cache for modes: {request.modes or 'all'}")
-        
-        # Handle None case for modes parameter
-        modes_to_clear = request.modes if request.modes is not None else None
-        result = await pipeline.clear_cache(modes_to_clear)
+        result = await pipeline.clear_cache(request.modes if request.modes else None)
         
         return CacheClearResponse(**result)
         
@@ -443,9 +291,9 @@ async def token_stats_endpoint():
         if not pipeline:
             raise HTTPException(status_code=503, detail="Pipeline not initialized")
         
-        stats = await pipeline.get_token_usage_stats()
+        result = await pipeline.get_token_usage_stats()
         
-        return TokenStatsResponse(**stats)
+        return TokenStatsResponse(**result)
         
     except Exception as e:
         logger.error(f"Error getting token stats: {e}")
@@ -453,7 +301,7 @@ async def token_stats_endpoint():
 
 @app.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
-    """Upload and insert a single document"""
+    """Upload a single document file"""
     try:
         if not pipeline:
             raise HTTPException(status_code=503, detail="Pipeline not initialized")
@@ -462,8 +310,7 @@ async def upload_document(file: UploadFile = File(...)):
         content = await file.read()
         text = content.decode('utf-8')
         
-        logger.info(f"Uploading document: {file.filename}")
-        
+        # Insert the document
         result = await pipeline.insert_documents([text])
         
         return {
@@ -478,7 +325,7 @@ async def upload_document(file: UploadFile = File(...)):
 
 @app.post("/upload_batch")
 async def upload_documents_batch(files: List[UploadFile] = File(...)):
-    """Upload and insert multiple documents"""
+    """Upload multiple document files"""
     try:
         if not pipeline:
             raise HTTPException(status_code=503, detail="Pipeline not initialized")
@@ -492,8 +339,7 @@ async def upload_documents_batch(files: List[UploadFile] = File(...)):
             documents.append(text)
             filenames.append(file.filename)
         
-        logger.info(f"Uploading {len(files)} documents")
-        
+        # Insert all documents
         result = await pipeline.insert_documents(documents)
         
         return {
@@ -503,21 +349,132 @@ async def upload_documents_batch(files: List[UploadFile] = File(...)):
         }
         
     except Exception as e:
-        logger.error(f"Error uploading documents: {e}")
+        logger.error(f"Error uploading documents batch: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# --- Error Handlers ---
+# --- Document Management Endpoints ---
+
+@app.get("/documents", response_model=DocsStatusesResponse)
+async def get_documents():
+    """Get all documents status"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # Return empty document status for now
+        # TODO: Implement document retrieval from pipeline
+        statuses = {
+            "processed": [],
+            "pending": [],
+            "processing": [],
+            "failed": []
+        }
+        
+        return DocsStatusesResponse(statuses=statuses)
+        
+    except Exception as e:
+        logger.error(f"Error getting documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/scan")
+async def scan_documents():
+    """Scan for new documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement document scanning
+        return {"status": "scanning_started", "message": "Document scanning initiated"}
+        
+    except Exception as e:
+        logger.error(f"Error scanning documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/documents/pipeline_status", response_model=PipelineStatusResponse)
+async def get_pipeline_status():
+    """Get pipeline status"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # Return default pipeline status
+        return PipelineStatusResponse(
+            autoscanned=False,
+            busy=False,
+            job_name="Default Job",
+            docs=0,
+            batchs=0,
+            cur_batch=0,
+            request_pending=False,
+            latest_message="Pipeline is ready"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting pipeline status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/upload")
+async def upload_document_to_documents(file: UploadFile = File(...)):
+    """Upload document to documents endpoint"""
+    return await upload_document(file)
+
+# --- Graph Visualization Endpoints ---
+
+@app.get("/graph/label/list")
+async def get_graph_labels():
+    """Get all graph labels"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement graph labels retrieval
+        return []
+        
+    except Exception as e:
+        logger.error(f"Error getting graph labels: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/graphs", response_model=LightragGraphType)
+async def get_knowledge_graph(
+    label: str = Query(..., description="Label to get knowledge graph for"),
+    max_depth: int = Query(3, description="Maximum depth of graph", ge=1),
+    max_nodes: int = Query(1000, description="Maximum nodes to return", ge=1),
+):
+    """Get knowledge graph for a specific label"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement knowledge graph retrieval
+        return LightragGraphType(nodes=[], edges=[])
+        
+    except Exception as e:
+        logger.error(f"Error getting knowledge graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/graph/entity/exists")
+async def check_entity_exists(name: str = Query(..., description="Entity name to check")):
+    """Check if an entity exists"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement entity existence check
+        return {"exists": False}
+        
+    except Exception as e:
+        logger.error(f"Error checking entity existence: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Global Exception Handler ---
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     """Global exception handler"""
     logger.error(f"Unhandled exception: {exc}")
-    return {"error": "Internal server error", "detail": str(exc)}
-
-# --- Main Function ---
+    return {"error": str(exc)}, 500
 
 if __name__ == "__main__":
-    # Run the server
     uvicorn.run(
         "api_server:app",
         host="0.0.0.0",

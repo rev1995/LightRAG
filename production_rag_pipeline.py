@@ -422,7 +422,7 @@ class ProductionRAGPipeline:
             for text in texts:
                 response = client.models.embed_content(
                     model=self.config.EMBEDDING_MODEL,
-                    content=text
+                    contents=text
                 )
                 embeddings.append(response.embedding)
             

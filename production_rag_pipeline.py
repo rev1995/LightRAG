@@ -583,7 +583,7 @@ class ProductionRAGPipeline:
                 response = await self.rag.aquery(query, param=query_param)
             
             # Get token usage statistics
-            token_stats = self.token_tracker.get_usage_stats()
+            token_stats = self.token_tracker.get_usage()
             
             return {
                 "response": response,
@@ -631,14 +631,31 @@ class ProductionRAGPipeline:
     async def get_token_usage_stats(self) -> Dict[str, Any]:
         """Get comprehensive token usage statistics"""
         try:
-            stats = self.token_tracker.get_usage_stats()
+            stats = self.token_tracker.get_usage()
+            total_requests = stats.get("call_count", 0)
+            total_tokens = stats.get("total_tokens", 0)
+            prompt_tokens = stats.get("prompt_tokens", 0)
+            completion_tokens = stats.get("completion_tokens", 0)
+            
+            # Calculate average tokens per request
+            average_tokens_per_request = (
+                total_tokens / total_requests if total_requests > 0 else 0
+            )
+            
+            # Simple cost estimation (you can adjust rates as needed)
+            # Assuming $0.001 per 1K tokens for input and $0.002 per 1K tokens for output
+            cost_estimation = (
+                (prompt_tokens * 0.001 / 1000) + 
+                (completion_tokens * 0.002 / 1000)
+            )
+            
             return {
-                "total_requests": stats.get("total_requests", 0),
-                "total_tokens": stats.get("total_tokens", 0),
-                "prompt_tokens": stats.get("prompt_tokens", 0),
-                "completion_tokens": stats.get("completion_tokens", 0),
-                "average_tokens_per_request": stats.get("average_tokens_per_request", 0),
-                "cost_estimation": stats.get("cost_estimation", 0)
+                "total_requests": total_requests,
+                "total_tokens": total_tokens,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "average_tokens_per_request": average_tokens_per_request,
+                "cost_estimation": cost_estimation
             }
         except Exception as e:
             self.logger.error(f"Error getting token usage stats: {e}")

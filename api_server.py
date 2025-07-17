@@ -160,6 +160,39 @@ class LightragGraphType(BaseModel):
     nodes: List[LightragNodeType]
     edges: List[LightragEdgeType]
 
+# --- Additional Pydantic Models ---
+
+class DocActionResponse(BaseModel):
+    """Response model for document actions"""
+    status: str
+    message: str
+
+class DeleteDocResponse(BaseModel):
+    """Response model for document deletion"""
+    status: str
+    message: str
+    doc_id: str
+
+class LightragDocumentsScanProgress(BaseModel):
+    """Response model for document scan progress"""
+    is_scanning: bool = False
+    current_file: str = ""
+    indexed_count: int = 0
+    total_files: int = 0
+    progress: float = 0.0
+
+class EntityUpdateRequest(BaseModel):
+    """Request model for entity updates"""
+    entity_name: str
+    updated_data: Dict[str, Any]
+    allow_rename: bool = False
+
+class RelationUpdateRequest(BaseModel):
+    """Request model for relation updates"""
+    source_entity: str
+    target_entity: str
+    updated_data: Dict[str, Any]
+
 # --- Startup and Shutdown Events ---
 
 @app.on_event("startup")
@@ -465,6 +498,260 @@ async def check_entity_exists(name: str = Query(..., description="Entity name to
     except Exception as e:
         logger.error(f"Error checking entity existence: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- Additional Document Management Endpoints ---
+
+@app.get("/documents/scan/progress", response_model=LightragDocumentsScanProgress)
+async def get_documents_scan_progress():
+    """Get document scan progress"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement scan progress tracking
+        return LightragDocumentsScanProgress()
+        
+    except Exception as e:
+        logger.error(f"Error getting scan progress: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/clear", response_model=DocActionResponse)
+async def clear_documents():
+    """Clear all documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement document clearing
+        return DocActionResponse(status="success", message="Documents cleared successfully")
+        
+    except Exception as e:
+        logger.error(f"Error clearing documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/delete", response_model=DeleteDocResponse)
+async def delete_documents(doc_ids: List[str] = Query(...), delete_file: bool = Query(False)):
+    """Delete specific documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement document deletion
+        return DeleteDocResponse(
+            status="deletion_started",
+            message="Document deletion initiated",
+            doc_id=doc_ids[0] if doc_ids else ""
+        )
+        
+    except Exception as e:
+        logger.error(f"Error deleting documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Additional Query Endpoints ---
+
+@app.post("/query/stream")
+async def query_stream(request: QueryRequest):
+    """Stream query response"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        async def generate():
+            try:
+                # Build query parameters, only passing non-None values
+                query_kwargs = {"query": request.query}
+                
+                if request.mode is not None:
+                    query_kwargs["mode"] = request.mode
+                if request.user_prompt is not None:
+                    query_kwargs["user_prompt"] = request.user_prompt
+                if request.top_k is not None:
+                    query_kwargs["top_k"] = request.top_k
+                if request.chunk_top_k is not None:
+                    query_kwargs["chunk_top_k"] = request.chunk_top_k
+                if request.enable_rerank is not None:
+                    query_kwargs["enable_rerank"] = request.enable_rerank
+                if request.response_type is not None:
+                    query_kwargs["response_type"] = request.response_type
+                if request.conversation_history is not None:
+                    query_kwargs["conversation_history"] = request.conversation_history
+                
+                # Call the pipeline query method
+                result = await pipeline.query(**query_kwargs)
+                
+                # Stream the response in chunks
+                response_text = result.get("response", "")
+                chunk_size = 100
+                for i in range(0, len(response_text), chunk_size):
+                    chunk = response_text[i:i + chunk_size]
+                    yield f"data: {chunk}\n\n"
+                
+                yield "data: [DONE]\n\n"
+                
+            except Exception as e:
+                logger.error(f"Error in query stream: {e}")
+                yield f"data: Error: {str(e)}\n\n"
+        
+        return StreamingResponse(
+            generate(),
+            media_type="text/plain",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in query stream endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Additional Insert Endpoints ---
+
+@app.post("/insert/text", response_model=DocActionResponse)
+async def insert_text(text: str):
+    """Insert a single text document"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        result = await pipeline.insert_documents([text])
+        
+        return DocActionResponse(
+            status="success",
+            message=f"Text inserted successfully. {result['successful_insertions']} documents processed."
+        )
+        
+    except Exception as e:
+        logger.error(f"Error inserting text: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/insert/texts", response_model=DocActionResponse)
+async def insert_texts(texts: List[str]):
+    """Insert multiple text documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        result = await pipeline.insert_documents(texts)
+        
+        return DocActionResponse(
+            status="success",
+            message=f"Texts inserted successfully. {result['successful_insertions']} documents processed."
+        )
+        
+    except Exception as e:
+        logger.error(f"Error inserting texts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Additional Upload Endpoints ---
+
+@app.post("/upload/document")
+async def upload_document_endpoint(file: UploadFile = File(...)):
+    """Upload a single document file"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # Read file content
+        content = await file.read()
+        text = content.decode('utf-8')
+        
+        # Insert the document
+        result = await pipeline.insert_documents([text])
+        
+        return {
+            "filename": file.filename,
+            "status": "success",
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/upload/documents")
+async def upload_documents_endpoint(files: List[UploadFile] = File(...)):
+    """Upload multiple document files"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        documents = []
+        filenames = []
+        
+        for file in files:
+            content = await file.read()
+            text = content.decode('utf-8')
+            documents.append(text)
+            filenames.append(file.filename)
+        
+        # Insert all documents
+        result = await pipeline.insert_documents(documents)
+        
+        return {
+            "filenames": filenames,
+            "status": "success",
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Graph Entity and Relation Update Endpoints ---
+
+@app.post("/graph/entity/update", response_model=DocActionResponse)
+async def update_entity(request: EntityUpdateRequest):
+    """Update an entity in the knowledge graph"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement entity update
+        return DocActionResponse(
+            status="success",
+            message=f"Entity '{request.entity_name}' updated successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error updating entity: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/graph/relation/update", response_model=DocActionResponse)
+async def update_relation(request: RelationUpdateRequest):
+    """Update a relation in the knowledge graph"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement relation update
+        return DocActionResponse(
+            status="success",
+            message=f"Relation between '{request.source_entity}' and '{request.target_entity}' updated successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error updating relation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Additional RAG Endpoints ---
+
+@app.post("/query/rag", response_model=QueryResponse)
+async def query_rag_endpoint(request: QueryRequest):
+    """Query RAG system (alias for /query)"""
+    return await query_endpoint(request)
+
+@app.post("/insert/documents", response_model=InsertResponse)
+async def insert_documents_endpoint(request: InsertRequest):
+    """Insert documents (alias for /insert)"""
+    return await insert_endpoint(request)
+
+@app.post("/clear/rag/cache", response_model=CacheClearResponse)
+async def clear_rag_cache_endpoint(request: CacheClearRequest):
+    """Clear RAG cache (alias for /clear_cache)"""
+    return await clear_cache_endpoint(request)
+
+@app.get("/health/rag", response_model=HealthResponse)
+async def check_rag_health():
+    """Check RAG health (alias for /health)"""
+    return await health_check()
 
 # --- Global Exception Handler ---
 

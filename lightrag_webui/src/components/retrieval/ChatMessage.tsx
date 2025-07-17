@@ -61,13 +61,12 @@ export const ChatMessage = ({ message }: { message: MessageWithError }) => { // 
 
   return (
     <div
-      className={`${
-        message.role === 'user'
+      className={`${message.role === 'user'
           ? 'max-w-[80%] bg-primary text-primary-foreground'
           : message.isError
             ? 'w-[95%] bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400'
             : 'w-[95%] bg-muted'
-      } rounded-lg px-4 py-2`}
+        } rounded-lg px-4 py-2`}
     >
       <div className="relative">
         <ReactMarkdown
@@ -113,11 +112,11 @@ export const ChatMessage = ({ message }: { message: MessageWithError }) => { // 
             variant="default"
             size="icon"
           >
-            <CopyIcon className="size-4" /> {/* Explicit size */}
+            <CopyIcon className="size-4" /> { /* Explicit size */}
           </Button>
         )}
       </div>
-      {message.content === '' && <LoaderIcon className="animate-spin duration-2000" />} {/* Check for empty string specifically */}
+      {message.content === '' && <LoaderIcon className="animate-spin duration-2000" />} { /* Check for empty string specifically */}
     </div>
   )
 }

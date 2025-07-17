@@ -2,12 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import AppRouter from './AppRouter'
-import './i18n.ts';
+import { initializeI18n } from './i18n';
 
-
-
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <AppRouter />
-  </StrictMode>
-)
+initializeI18n().then(() => {
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <AppRouter />
+    </StrictMode>
+  )
+});

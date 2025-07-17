@@ -20,17 +20,11 @@ def main():
         sys.exit(1)
     
     # Check for environment file
-    env_file = ".env.backend"
+    env_file = ".env"
     if not Path(env_file).exists():
         print(f"⚠️  Warning: {env_file} not found")
-        print("Please create .env.backend with your configuration")
-        print("You can copy from .env.backend.example")
-    
-    # Check for required environment variables
-    if not os.getenv("GEMINI_API_KEY"):
-        print("❌ Error: GEMINI_API_KEY environment variable is required")
-        print("Please set it in your .env.backend file")
-        sys.exit(1)
+        print("Please create .env with your configuration")
+        print("You can copy from env.example")
     
     print("🚀 Starting LightRAG API Server...")
     print("📖 API Documentation: http://localhost:8000/docs")
@@ -48,4 +42,4 @@ def main():
     )
 
 if __name__ == "__main__":
-    main() 
+    main()

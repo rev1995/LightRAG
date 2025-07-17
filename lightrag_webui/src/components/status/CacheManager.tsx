@@ -22,27 +22,39 @@ export default function CacheManager() {
 
   const [cacheModes, setCacheModes] = React.useState<CacheMode[]>([
     {
-      id: 'query',
-      label: 'Query Cache',
-      description: 'Clear cached LLM responses for queries',
+      id: 'default',
+      label: 'Default Cache',
+      description: 'Clear cached LLM responses for default queries',
       checked: true
     },
     {
-      id: 'entity_extract',
-      label: 'Entity Extraction Cache',
-      description: 'Clear cached entity extraction results',
+      id: 'naive',
+      label: 'Naive Cache',
+      description: 'Clear cached LLM responses for naive queries',
       checked: true
     },
     {
-      id: 'relation_extract',
-      label: 'Relation Extraction Cache',
-      description: 'Clear cached relation extraction results',
+      id: 'local',
+      label: 'Local Cache',
+      description: 'Clear cached LLM responses for local queries',
       checked: true
     },
     {
-      id: 'summary',
-      label: 'Summary Cache',
-      description: 'Clear cached document and entity summaries',
+      id: 'global',
+      label: 'Global Cache',
+      description: 'Clear cached LLM responses for global queries',
+      checked: true
+    },
+    {
+      id: 'hybrid',
+      label: 'Hybrid Cache',
+      description: 'Clear cached LLM responses for hybrid queries',
+      checked: true
+    },
+    {
+      id: 'mix',
+      label: 'Mix Cache',
+      description: 'Clear cached LLM responses for mix queries',
       checked: true
     }
   ])
@@ -123,7 +135,7 @@ export default function CacheManager() {
               <Checkbox
                 id={mode.id}
                 checked={mode.checked}
-                onCheckedChange={(checked) => handleModeToggle(mode.id, checked)}
+                onCheckedChange={(checked) => handleModeToggle(mode.id, checked === true)}
                 className="mt-1"
               />
               <div className="flex-1">
@@ -205,4 +217,4 @@ export default function CacheManager() {
       </CardContent>
     </Card>
   )
-} 
+}

@@ -646,136 +646,134 @@ export default function DocumentManager() {
               </div>
             )}
             {docs && (
-              <div className="absolute inset-0 flex flex-col p-0">
-                <div className="absolute inset-[-1px] flex flex-col p-0 border rounded-md border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <Table className="w-full">
-                    <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
-                      <TableRow className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
-                        <TableHead
-                          onClick={() => handleSort('id')}
-                          className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
-                        >
-                          <div className="flex items-center">
-                            {t('documentPanel.documentManager.columns.id')}
-                            {sortField === 'id' && (
-                              <span className="ml-1">
-                                {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
-                              </span>
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead>{t('documentPanel.documentManager.columns.summary')}</TableHead>
-                        <TableHead>{t('documentPanel.documentManager.columns.status')}</TableHead>
-                        <TableHead>{t('documentPanel.documentManager.columns.length')}</TableHead>
-                        <TableHead>{t('documentPanel.documentManager.columns.chunks')}</TableHead>
-                        <TableHead
-                          onClick={() => handleSort('created_at')}
-                          className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
-                        >
-                          <div className="flex items-center">
-                            {t('documentPanel.documentManager.columns.created')}
-                            {sortField === 'created_at' && (
-                              <span className="ml-1">
-                                {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
-                              </span>
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead
-                          onClick={() => handleSort('updated_at')}
-                          className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
-                        >
-                          <div className="flex items-center">
-                            {t('documentPanel.documentManager.columns.updated')}
-                            {sortField === 'updated_at' && (
-                              <span className="ml-1">
-                                {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
-                              </span>
-                            )}
-                          </div>
-                        </TableHead>
-                        <TableHead className="w-16 text-center">
-                          {t('documentPanel.documentManager.columns.select')}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="text-sm overflow-auto">
-                      {filteredAndSortedDocs && filteredAndSortedDocs.map((doc) => (
-                        <TableRow key={doc.id}>
-                          <TableCell className="truncate font-mono overflow-visible max-w-[250px]">
-                            {showFileName ? (
-                              <>
-                                <div className="group relative overflow-visible tooltip-container">
-                                  <div className="truncate">
-                                    {getDisplayFileName(doc, 30)}
-                                  </div>
-                                  <div className="invisible group-hover:visible tooltip">
-                                    {doc.file_path}
-                                  </div>
-                                </div>
-                                <div className="text-xs text-gray-500">{doc.id}</div>
-                              </>
-                            ) : (
+              <div className="absolute inset-0 flex flex-col p-0 border rounded-md border-gray-200 dark:border-gray-700 overflow-hidden">
+                <Table className="w-full">
+                  <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
+                    <TableRow className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
+                      <TableHead
+                        onClick={() => handleSort('id')}
+                        className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
+                      >
+                        <div className="flex items-center">
+                          {t('documentPanel.documentManager.columns.id')}
+                          {sortField === 'id' && (
+                            <span className="ml-1">
+                              {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
+                            </span>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead>{t('documentPanel.documentManager.columns.summary')}</TableHead>
+                      <TableHead>{t('documentPanel.documentManager.columns.status')}</TableHead>
+                      <TableHead>{t('documentPanel.documentManager.columns.length')}</TableHead>
+                      <TableHead>{t('documentPanel.documentManager.columns.chunks')}</TableHead>
+                      <TableHead
+                        onClick={() => handleSort('created_at')}
+                        className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
+                      >
+                        <div className="flex items-center">
+                          {t('documentPanel.documentManager.columns.created')}
+                          {sortField === 'created_at' && (
+                            <span className="ml-1">
+                              {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
+                            </span>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        onClick={() => handleSort('updated_at')}
+                        className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
+                      >
+                        <div className="flex items-center">
+                          {t('documentPanel.documentManager.columns.updated')}
+                          {sortField === 'updated_at' && (
+                            <span className="ml-1">
+                              {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
+                            </span>
+                          )}
+                        </div>
+                      </TableHead>
+                      <TableHead className="w-16 text-center">
+                        {t('documentPanel.documentManager.columns.select')}
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="text-sm overflow-auto">
+                    {filteredAndSortedDocs && filteredAndSortedDocs.map((doc) => (
+                      <TableRow key={doc.id}>
+                        <TableCell className="truncate font-mono overflow-visible max-w-[250px]">
+                          {showFileName ? (
+                            <>
                               <div className="group relative overflow-visible tooltip-container">
                                 <div className="truncate">
-                                  {doc.id}
+                                  {getDisplayFileName(doc, 30)}
                                 </div>
                                 <div className="invisible group-hover:visible tooltip">
                                   {doc.file_path}
                                 </div>
                               </div>
-                            )}
-                          </TableCell>
-                          <TableCell className="max-w-xs min-w-45 truncate overflow-visible">
+                              <div className="text-xs text-gray-500">{doc.id}</div>
+                            </>
+                          ) : (
                             <div className="group relative overflow-visible tooltip-container">
                               <div className="truncate">
-                                {doc.content_summary}
+                                {doc.id}
                               </div>
                               <div className="invisible group-hover:visible tooltip">
-                                {doc.content_summary}
+                                {doc.file_path}
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {doc.status === 'processed' && (
-                              <span className="text-green-600">{t('documentPanel.documentManager.status.completed')}</span>
-                            )}
-                            {doc.status === 'processing' && (
-                              <span className="text-blue-600">{t('documentPanel.documentManager.status.processing')}</span>
-                            )}
-                            {doc.status === 'pending' && (
-                              <span className="text-yellow-600">{t('documentPanel.documentManager.status.pending')}</span>
-                            )}
-                            {doc.status === 'failed' && (
-                              <span className="text-red-600">{t('documentPanel.documentManager.status.failed')}</span>
-                            )}
-                            {doc.error && (
-                              <span className="ml-2 text-red-500" title={doc.error}>
-                                ⚠️
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell>{doc.content_length ?? '-'}</TableCell>
-                          <TableCell>{doc.chunks_count ?? '-'}</TableCell>
-                          <TableCell className="truncate">
-                            {new Date(doc.created_at).toLocaleString()}
-                          </TableCell>
-                          <TableCell className="truncate">
-                            {new Date(doc.updated_at).toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Checkbox
-                              checked={selectedDocIds.includes(doc.id)}
-                              onCheckedChange={(checked) => handleDocumentSelect(doc.id, checked === true)}
-                              // disabled={doc.status !== 'processed'}
-                              className="mx-auto"
-                            />
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                          )}
+                        </TableCell>
+                        <TableCell className="max-w-xs min-w-45 truncate overflow-visible">
+                          <div className="group relative overflow-visible tooltip-container">
+                            <div className="truncate">
+                              {doc.content_summary}
+                            </div>
+                            <div className="invisible group-hover:visible tooltip">
+                              {doc.content_summary}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {doc.status === 'processed' && (
+                            <span className="text-green-600">{t('documentPanel.documentManager.status.completed')}</span>
+                          )}
+                          {doc.status === 'processing' && (
+                            <span className="text-blue-600">{t('documentPanel.documentManager.status.processing')}</span>
+                          )}
+                          {doc.status === 'pending' && (
+                            <span className="text-yellow-600">{t('documentPanel.documentManager.status.pending')}</span>
+                          )}
+                          {doc.status === 'failed' && (
+                            <span className="text-red-600">{t('documentPanel.documentManager.status.failed')}</span>
+                          )}
+                          {doc.error && (
+                            <span className="ml-2 text-red-500" title={doc.error}>
+                              ⚠️
+                            </span>
+                          )}
+                        </TableCell>
+                        <TableCell>{doc.content_length ?? '-'}</TableCell>
+                        <TableCell>{doc.chunks_count ?? '-'}</TableCell>
+                        <TableCell className="truncate">
+                          {new Date(doc.created_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="truncate">
+                          {new Date(doc.updated_at).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Checkbox
+                            checked={selectedDocIds.includes(doc.id)}
+                            onCheckedChange={(checked) => handleDocumentSelect(doc.id, checked === true)}
+                            // disabled={doc.status !== 'processed'}
+                            className="mx-auto"
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>

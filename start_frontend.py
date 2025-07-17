@@ -37,13 +37,7 @@ def main():
         
         # Create default environment file
         with open(env_file, "w") as f:
-            f.write("""# LightRAG Frontend Environment Configuration
-
-# API Configuration
-VITE_API_URL=http://localhost:8000
-VITE_API_PROXY=http://localhost:8000
-VITE_API_ENDPOINTS=http://localhost:8000
-VITE_BACKEND_URL=http://localhost:8000
+            f.write("""VITE_API_URL=http://localhost:8000
 """)
         print("✅ Created .env.local with default configuration")
     
@@ -73,4 +67,4 @@ VITE_BACKEND_URL=http://localhost:8000
         print("\n👋 Frontend stopped by user")
 
 if __name__ == "__main__":
-    main() 
+    main()

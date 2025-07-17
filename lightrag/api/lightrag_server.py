@@ -210,6 +210,8 @@ def create_app(args):
             azure_openai_complete_if_cache,
             azure_openai_embed,
         )
+    if args.llm_binding == "gemini" or args.embedding_binding == "gemini":
+        from lightrag.llm.gemini import llm_model_func as gemini_llm_model_complete, embedding_func as gemini_embed
     if args.llm_binding_host == "openai-ollama" or args.embedding_binding == "ollama":
         from lightrag.llm.openai import openai_complete_if_cache
         from lightrag.llm.ollama import ollama_embed
@@ -278,6 +280,12 @@ def create_app(args):
             api_key=args.embedding_binding_api_key,
         )
         if args.embedding_binding == "ollama"
+        else gemini_embed(
+            texts,
+            model=args.embedding_model,
+            api_key=args.embedding_binding_api_key,
+        )
+        if args.embedding_binding == "gemini"
         else azure_openai_embed(
             texts,
             model=args.embedding_model,  # no host is used for openai,
@@ -321,7 +329,7 @@ def create_app(args):
         )
 
     # Initialize RAG
-    if args.llm_binding in ["lollms", "ollama", "openai"]:
+    if args.llm_binding in ["lollms", "ollama", "openai", "gemini"]:
         rag = LightRAG(
             working_dir=args.working_dir,
             workspace=args.workspace,
@@ -329,7 +337,9 @@ def create_app(args):
             if args.llm_binding == "lollms"
             else ollama_model_complete
             if args.llm_binding == "ollama"
-            else openai_alike_model_complete,
+            else openai_alike_model_complete
+            if args.llm_binding == "openai"
+            else gemini_llm_model_complete,
             llm_model_name=args.llm_model,
             llm_model_max_async=args.max_async,
             llm_model_max_token_size=args.max_tokens,
@@ -342,6 +352,12 @@ def create_app(args):
                 "api_key": args.llm_binding_api_key,
             }
             if args.llm_binding == "lollms" or args.llm_binding == "ollama"
+            else {
+                "base_url": args.llm_binding_host,
+                "api_key": args.llm_binding_api_key,
+                "timeout": args.timeout,
+            }
+            if args.llm_binding == "openai" or args.llm_binding == "gemini"
             else {},
             embedding_func=embedding_func,
             kv_storage=args.kv_storage,
@@ -607,10 +623,10 @@ def configure_logging():
             "disable_existing_loggers": False,
             "formatters": {
                 "default": {
-                    "format": "%(levelname)s: %(message)s",
+                    "format": "% (levelname)s: % (message)s",
                 },
                 "detailed": {
-                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    "format": "% (asctime)s - % (name)s - % (levelname)s - % (message)s",
                 },
             },
             "handlers": {

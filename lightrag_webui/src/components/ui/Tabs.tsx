@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils'
 const Tabs = TabsPrimitive.Root
 
 const TabsList = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.List>,
+  React.ElementRef<typeof TabsPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.List>
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.List
@@ -21,7 +21,7 @@ const TabsList = React.forwardRef<
 TabsList.displayName = TabsPrimitive.List.displayName
 
 const TabsTrigger = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.Trigger>,
+  React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Trigger
@@ -36,19 +36,17 @@ const TabsTrigger = React.forwardRef<
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
 
 const TabsContent = React.forwardRef<
-  React.ComponentRef<typeof TabsPrimitive.Content>,
+  React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
 >(({ className, ...props }, ref) => (
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
       'ring-offset-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-      'data-[state=inactive]:invisible data-[state=active]:visible',
+      'data-[state=inactive]:hidden data-[state=active]:block',
       'h-full w-full',
       className
     )}
-    // Force mounting of inactive tabs to preserve WebGL contexts
-    forceMount
     {...props}
   />
 ))

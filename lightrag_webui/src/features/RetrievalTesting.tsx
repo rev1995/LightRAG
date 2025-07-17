@@ -339,8 +339,7 @@ export default function RetrievalTesting() {
                   return (
                     <div
                       key={message.id} // Use stable ID for key
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
+                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       {<ChatMessage message={message} />}
                     </div>
                   );

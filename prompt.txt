@@ -1,0 +1,1980 @@
+Think you are a senior software developer in AI and RAG system. Understand the whole codebase inside lightrag dir. I need you to implement full end to end rag pipeline which will be more reliable, robust, fully functional rag system. I have given you the full source code of lightrag core functionality, api server and lightrag_webui for frontend application. i need to use Gemini 2.0 flash llm model, gemma tokenizer, suitable gemini embedding model, reranking model with all the core functionality and feature like cacheing, glenning, query param, history, context retrival logic, storages logic, document processing logics. For now use default storage for all. So give me api server by refering lightrag api code, lightrag gemini pipeline code, web interface by refereing webui code. i have all attached the examples to refer and get idea for gemini models implementation. Implement all api endpoints availalbe and all api endpints called by fronend and make it more robust, reliable and fully functional sytem. do not hallucinate the reponse, follow best practices. add necessary env variables in .env to control the paramerter of whole rag ppeline sytsem. refere .env.example. You can also refer below code:
+api:
+#!/usr/bin/env python3
+"""
+LightRAG API Server - Production Ready
+
+A comprehensive FastAPI server that provides a REST API for the LightRAG production pipeline.
+This server wraps the ProductionRAGPipeline and exposes all endpoints needed by the frontend.
+
+Features:
+- Gemini LLM integration with token tracking
+- Gemini native embeddings
+- Advanced caching with multiple modes
+- Reranker integration with mix mode as default
+- Query parameter controls
+- Data isolation between instances
+- Multimodal document processing
+- Production-ready logging and error handling
+- All frontend API endpoints implemented
+"""
+
+import os
+import asyncio
+import logging
+import json
+from datetime import datetime
+from typing import List, Optional, Dict, Any, Union
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Query, Form, Depends
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, JSONResponse
+from pydantic import BaseModel, Field
+import uvicorn
+from pathlib import Path
+
+# Import the production pipeline
+from production_rag_pipeline import ProductionRAGPipeline, RAGConfig
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Create FastAPI app
+app = FastAPI(
+    title="LightRAG API",
+    description="Production-ready RAG API with Gemini LLM integration",
+    version="1.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
+)
+
+# CORS middleware for frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure appropriately for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Global pipeline instance
+pipeline: Optional[ProductionRAGPipeline] = None
+
+# --- Pydantic Models ---
+
+class QueryRequest(BaseModel):
+    """Request model for querying the RAG system"""
+    query: str = Field(..., description="The query text")
+    mode: Optional[str] = Field(None, description="Query mode (naive, local, global, hybrid, mix, bypass)")
+    user_prompt: Optional[str] = Field(None, description="Custom user prompt")
+    top_k: Optional[int] = Field(None, description="Number of top entities/relations to retrieve")
+    chunk_top_k: Optional[int] = Field(None, description="Number of top chunks to retrieve")
+    enable_rerank: Optional[bool] = Field(None, description="Enable reranking")
+    response_type: Optional[str] = Field("Multiple Paragraphs", description="Response format type")
+    conversation_history: Optional[List[Dict[str, str]]] = Field(None, description="Conversation history")
+    only_need_context: Optional[bool] = Field(False, description="Only return retrieved context")
+    only_need_prompt: Optional[bool] = Field(False, description="Only return generated prompt")
+    stream: Optional[bool] = Field(False, description="Enable streaming output")
+    max_entity_tokens: Optional[int] = Field(None, description="Max tokens for entity context")
+    max_relation_tokens: Optional[int] = Field(None, description="Max tokens for relation context")
+    max_total_tokens: Optional[int] = Field(None, description="Max total tokens budget")
+    history_turns: Optional[int] = Field(None, description="Number of conversation turns to consider")
+
+class QueryResponse(BaseModel):
+    """Response model for queries"""
+    response: str
+    query_mode: str
+    token_usage: Dict[str, Any]
+    query_params: Dict[str, Any]
+
+class InsertRequest(BaseModel):
+    """Request model for inserting documents"""
+    documents: List[str] = Field(..., description="List of document texts to insert")
+
+class InsertResponse(BaseModel):
+    """Response model for document insertion"""
+    total_documents: int
+    successful_insertions: int
+    results: List[Dict[str, Any]]
+
+class CacheClearRequest(BaseModel):
+    """Request model for clearing cache"""
+    modes: Optional[List[str]] = Field(None, description="Cache modes to clear")
+
+class CacheClearResponse(BaseModel):
+    """Response model for cache clearing"""
+    status: str
+    message: str
+    modes_cleared: Any
+
+class TokenStatsResponse(BaseModel):
+    """Response model for token statistics"""
+    total_requests: int
+    total_tokens: int
+    prompt_tokens: int
+    completion_tokens: int
+    average_tokens_per_request: float
+    cost_estimation: float
+
+class HealthResponse(BaseModel):
+    """Response model for health check"""
+    status: str
+    message: str
+    pipeline_initialized: bool
+
+# Document management models
+class DocStatusResponse(BaseModel):
+    """Response model for document status"""
+    id: str
+    content_summary: str
+    content_length: int
+    status: str
+    created_at: str
+    updated_at: str
+    chunks_count: Optional[int] = None
+    error: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+    file_path: str
+
+class DocsStatusesResponse(BaseModel):
+    """Response model for document statuses"""
+    statuses: Dict[str, List[DocStatusResponse]]
+
+class PipelineStatusResponse(BaseModel):
+    """Response model for pipeline status"""
+    autoscanned: bool = False
+    busy: bool = False
+    job_name: str = "Default Job"
+    job_start: Optional[str] = None
+    docs: int = 0
+    batchs: int = 0
+    cur_batch: int = 0
+    request_pending: bool = False
+    latest_message: str = ""
+    history_messages: Optional[List[str]] = None
+    update_status: Optional[Dict[str, Any]] = None
+
+# Graph models
+class LightragNodeType(BaseModel):
+    """Model for graph node"""
+    id: str
+    labels: List[str]
+    properties: Dict[str, Any]
+
+class LightragEdgeType(BaseModel):
+    """Model for graph edge"""
+    id: str
+    source: str
+    target: str
+    type: str
+    properties: Dict[str, Any]
+
+class LightragGraphType(BaseModel):
+    """Model for knowledge graph"""
+    nodes: List[LightragNodeType]
+    edges: List[LightragEdgeType]
+
+# Additional models
+class DocActionResponse(BaseModel):
+    """Response model for document actions"""
+    status: str
+    message: str
+
+class DeleteDocResponse(BaseModel):
+    """Response model for document deletion"""
+    status: str
+    message: str
+    doc_id: str
+
+class LightragDocumentsScanProgress(BaseModel):
+    """Response model for document scan progress"""
+    is_scanning: bool = False
+    current_file: str = ""
+    indexed_count: int = 0
+    total_files: int = 0
+    progress: float = 0.0
+
+class EntityUpdateRequest(BaseModel):
+    """Request model for entity updates"""
+    entity_name: str
+    updated_data: Dict[str, Any]
+    allow_rename: bool = False
+
+class RelationUpdateRequest(BaseModel):
+    """Request model for relation updates"""
+    source_entity: str
+    target_entity: str
+    updated_data: Dict[str, Any]
+
+class LightragStatus(BaseModel):
+    """Response model for detailed health status"""
+    status: str
+    working_directory: str
+    input_directory: str
+    configuration: Dict[str, Any]
+    update_status: Optional[Dict[str, Any]] = None
+    core_version: Optional[str] = None
+    api_version: Optional[str] = None
+    auth_mode: Optional[str] = None
+    pipeline_busy: bool = False
+    keyed_locks: Optional[Dict[str, Any]] = None
+    webui_title: Optional[str] = None
+    webui_description: Optional[str] = None
+
+# --- Startup and Shutdown Events ---
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize the RAG pipeline on startup"""
+    global pipeline
+    try:
+        logger.info("Initializing LightRAG API server...")
+        
+        # Load configuration
+        config = RAGConfig()
+        
+        # Initialize pipeline
+        pipeline = ProductionRAGPipeline(config)
+        await pipeline.initialize()
+        
+        logger.info("LightRAG API server initialized successfully")
+        
+    except Exception as e:
+        logger.error(f"Failed to initialize pipeline: {e}")
+        raise
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Clean up resources on shutdown"""
+    global pipeline
+    try:
+        if pipeline:
+            await pipeline.finalize()
+            logger.info("LightRAG API server shutdown completed")
+    except Exception as e:
+        logger.error(f"Error during shutdown: {e}")
+
+# --- API Endpoints ---
+
+@app.get("/", response_model=Dict[str, str])
+async def root():
+    """Root endpoint with API information"""
+    return {
+        "message": "LightRAG API Server",
+        "version": "1.0.0",
+        "docs": "/docs",
+        "health": "/health"
+    }
+
+@app.get("/health", response_model=HealthResponse)
+async def health_check():
+    """Health check endpoint"""
+    try:
+        return HealthResponse(
+            status="healthy",
+            message="LightRAG API server is running",
+            pipeline_initialized=pipeline is not None
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/health/rag", response_model=HealthResponse)
+async def check_rag_health():
+    """RAG health check (alias for /health)"""
+    return await health_check()
+
+@app.post("/query", response_model=QueryResponse)
+async def query_endpoint(request: QueryRequest):
+    """Query the RAG system"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        logger.info(f"Processing query: {request.query[:100]}...")
+        
+        # Build query parameters, only passing non-None values
+        query_kwargs = {"query": request.query}
+        
+        if request.mode is not None:
+            query_kwargs["mode"] = request.mode
+        if request.user_prompt is not None:
+            query_kwargs["user_prompt"] = request.user_prompt
+        if request.top_k is not None:
+            query_kwargs["top_k"] = request.top_k
+        if request.chunk_top_k is not None:
+            query_kwargs["chunk_top_k"] = request.chunk_top_k
+        if request.enable_rerank is not None:
+            query_kwargs["enable_rerank"] = request.enable_rerank
+        if request.response_type is not None:
+            query_kwargs["response_type"] = request.response_type
+        if request.conversation_history is not None:
+            query_kwargs["conversation_history"] = request.conversation_history
+        if request.max_entity_tokens is not None:
+            query_kwargs["max_entity_tokens"] = request.max_entity_tokens
+        if request.max_relation_tokens is not None:
+            query_kwargs["max_relation_tokens"] = request.max_relation_tokens
+        if request.max_total_tokens is not None:
+            query_kwargs["max_total_tokens"] = request.max_total_tokens
+        if request.history_turns is not None:
+            query_kwargs["history_turns"] = request.history_turns
+        
+        result = await pipeline.query(**query_kwargs)
+        
+        return QueryResponse(**result)
+        
+    except Exception as e:
+        logger.error(f"Error processing query: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/query/rag", response_model=QueryResponse)
+async def query_rag_endpoint(request: QueryRequest):
+    """Query RAG system (alias for /query)"""
+    return await query_endpoint(request)
+
+@app.post("/query/stream")
+async def query_stream(request: QueryRequest):
+    """Stream query response"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        async def generate():
+            try:
+                # Build query parameters, only passing non-None values
+                query_kwargs = {"query": request.query}
+                
+                if request.mode is not None:
+                    query_kwargs["mode"] = request.mode
+                if request.user_prompt is not None:
+                    query_kwargs["user_prompt"] = request.user_prompt
+                if request.top_k is not None:
+                    query_kwargs["top_k"] = request.top_k
+                if request.chunk_top_k is not None:
+                    query_kwargs["chunk_top_k"] = request.chunk_top_k
+                if request.enable_rerank is not None:
+                    query_kwargs["enable_rerank"] = request.enable_rerank
+                if request.response_type is not None:
+                    query_kwargs["response_type"] = request.response_type
+                if request.conversation_history is not None:
+                    query_kwargs["conversation_history"] = request.conversation_history
+                if request.max_entity_tokens is not None:
+                    query_kwargs["max_entity_tokens"] = request.max_entity_tokens
+                if request.max_relation_tokens is not None:
+                    query_kwargs["max_relation_tokens"] = request.max_relation_tokens
+                if request.max_total_tokens is not None:
+                    query_kwargs["max_total_tokens"] = request.max_total_tokens
+                if request.history_turns is not None:
+                    query_kwargs["history_turns"] = request.history_turns
+                
+                # Call the pipeline query method
+                result = await pipeline.query(**query_kwargs)
+                
+                # Stream the response in chunks
+                response_text = result.get("response", "")
+                chunk_size = 100
+                for i in range(0, len(response_text), chunk_size):
+                    chunk = response_text[i:i + chunk_size]
+                    yield f"data: {json.dumps({'response': chunk})}\n\n"
+                
+                yield "data: [DONE]\n\n"
+                
+            except Exception as e:
+                logger.error(f"Error in query stream: {e}")
+                yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        return StreamingResponse(
+            generate(),
+            media_type="text/plain",
+            headers={"Cache-Control": "no-cache", "Connection": "keep-alive"}
+        )
+        
+    except Exception as e:
+        logger.error(f"Error in query stream endpoint: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/insert", response_model=InsertResponse)
+async def insert_endpoint(request: InsertRequest):
+    """Insert documents into the RAG system"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        logger.info(f"Inserting {len(request.documents)} documents...")
+        
+        result = await pipeline.insert_documents(request.documents)
+        
+        return InsertResponse(**result)
+        
+    except Exception as e:
+        logger.error(f"Error inserting documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/insert/documents", response_model=InsertResponse)
+async def insert_documents_endpoint(request: InsertRequest):
+    """Insert documents (alias for /insert)"""
+    return await insert_endpoint(request)
+
+@app.post("/insert/text", response_model=DocActionResponse)
+async def insert_text(text: str = Form(...)):
+    """Insert a single text document"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        result = await pipeline.insert_documents([text])
+        
+        return DocActionResponse(
+            status="success",
+            message=f"Text inserted successfully. {result['successful_insertions']} documents processed."
+        )
+        
+    except Exception as e:
+        logger.error(f"Error inserting text: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/insert/texts", response_model=DocActionResponse)
+async def insert_texts(texts: List[str] = Form(...)):
+    """Insert multiple text documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        result = await pipeline.insert_documents(texts)
+        
+        return DocActionResponse(
+            status="success",
+            message=f"Texts inserted successfully. {result['successful_insertions']} documents processed."
+        )
+        
+    except Exception as e:
+        logger.error(f"Error inserting texts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/clear_cache", response_model=CacheClearResponse)
+async def clear_cache_endpoint(request: CacheClearRequest):
+    """Clear cache with specified modes"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        result = await pipeline.clear_cache(request.modes if request.modes else None)
+        
+        return CacheClearResponse(**result)
+        
+    except Exception as e:
+        logger.error(f"Error clearing cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/clear/rag/cache", response_model=CacheClearResponse)
+async def clear_rag_cache_endpoint(request: CacheClearRequest):
+    """Clear RAG cache (alias for /clear_cache)"""
+    return await clear_cache_endpoint(request)
+
+@app.get("/token_stats", response_model=TokenStatsResponse)
+async def token_stats_endpoint():
+    """Get token usage statistics"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        result = await pipeline.get_token_usage_stats()
+        
+        return TokenStatsResponse(**result)
+        
+    except Exception as e:
+        logger.error(f"Error getting token stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/upload")
+async def upload_document(file: UploadFile = File(...)):
+    """Upload a single document file"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # Read file content
+        content = await file.read()
+        text = content.decode('utf-8')
+        
+        # Insert the document
+        result = await pipeline.insert_documents([text])
+        
+        return {
+            "filename": file.filename,
+            "status": "success",
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading document: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/upload_batch")
+async def upload_documents_batch(files: List[UploadFile] = File(...)):
+    """Upload multiple document files"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        documents = []
+        filenames = []
+        
+        for file in files:
+            content = await file.read()
+            text = content.decode('utf-8')
+            documents.append(text)
+            filenames.append(file.filename)
+        
+        # Insert all documents
+        result = await pipeline.insert_documents(documents)
+        
+        return {
+            "filenames": filenames,
+            "status": "success",
+            "result": result
+        }
+        
+    except Exception as e:
+        logger.error(f"Error uploading documents batch: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/upload/document")
+async def upload_document_endpoint(file: UploadFile = File(...)):
+    """Upload a single document file (alias for /upload)"""
+    return await upload_document(file)
+
+@app.post("/upload/documents")
+async def upload_documents_endpoint(files: List[UploadFile] = File(...)):
+    """Upload multiple document files (alias for /upload_batch)"""
+    return await upload_documents_batch(files)
+
+# --- Document Management Endpoints ---
+
+@app.get("/documents", response_model=DocsStatusesResponse)
+async def get_documents():
+    """Get all documents status"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # Return empty document status for now
+        # TODO: Implement document retrieval from pipeline
+        statuses = {
+            "processed": [],
+            "pending": [],
+            "processing": [],
+            "failed": []
+        }
+        
+        return DocsStatusesResponse(statuses=statuses)
+        
+    except Exception as e:
+        logger.error(f"Error getting documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/scan")
+async def scan_documents():
+    """Scan for new documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement document scanning
+        return {"status": "scanning_started", "message": "Document scanning initiated"}
+        
+    except Exception as e:
+        logger.error(f"Error scanning documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/documents/scan-progress", response_model=LightragDocumentsScanProgress)
+async def get_documents_scan_progress():
+    """Get document scan progress"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement scan progress tracking
+        return LightragDocumentsScanProgress()
+        
+    except Exception as e:
+        logger.error(f"Error getting scan progress: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/documents/pipeline_status", response_model=PipelineStatusResponse)
+async def get_pipeline_status():
+    """Get pipeline status"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # Return default pipeline status
+        return PipelineStatusResponse(
+            autoscanned=False,
+            busy=False,
+            job_name="Default Job",
+            docs=0,
+            batchs=0,
+            cur_batch=0,
+            request_pending=False,
+            latest_message="Pipeline is ready"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error getting pipeline status: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/upload")
+async def upload_document_to_documents(file: UploadFile = File(...)):
+    """Upload document to documents endpoint"""
+    return await upload_document(file)
+
+@app.delete("/documents")
+async def clear_documents():
+    """Clear all documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement document clearing
+        return DocActionResponse(status="success", message="Documents cleared successfully")
+        
+    except Exception as e:
+        logger.error(f"Error clearing documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/clear_cache")
+async def clear_documents_cache(modes: Optional[List[str]] = Form(None)):
+    """Clear documents cache"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        result = await pipeline.clear_cache(modes)
+        
+        return {
+            "status": "success" if result.get("status") == "success" else "fail",
+            "message": result.get("message", "Cache cleared")
+        }
+        
+    except Exception as e:
+        logger.error(f"Error clearing documents cache: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/documents/delete_document")
+async def delete_documents(doc_ids: List[str] = Form(...), delete_file: bool = Form(False)):
+    """Delete specific documents"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement document deletion
+        return DeleteDocResponse(
+            status="deletion_started",
+            message="Document deletion initiated",
+            doc_id=doc_ids[0] if doc_ids else ""
+        )
+        
+    except Exception as e:
+        logger.error(f"Error deleting documents: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/documents/text")
+async def insert_document_text(text: str = Form(...)):
+    """Insert text document"""
+    return await insert_text(text)
+
+@app.post("/documents/texts")
+async def insert_document_texts(texts: List[str] = Form(...)):
+    """Insert multiple text documents"""
+    return await insert_texts(texts)
+
+# --- Graph Visualization Endpoints ---
+
+@app.get("/graph/label/list")
+async def get_graph_labels():
+    """Get all graph labels"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement graph labels retrieval
+        return []
+        
+    except Exception as e:
+        logger.error(f"Error getting graph labels: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/graphs", response_model=LightragGraphType)
+async def get_knowledge_graph(
+    label: str = Query(..., description="Label to get knowledge graph for"),
+    max_depth: int = Query(3, description="Maximum depth of graph", ge=1),
+    max_nodes: int = Query(1000, description="Maximum nodes to return", ge=1),
+):
+    """Get knowledge graph for a specific label"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement knowledge graph retrieval
+        return LightragGraphType(nodes=[], edges=[])
+        
+    except Exception as e:
+        logger.error(f"Error getting knowledge graph: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/graph/entity/exists")
+async def check_entity_exists(name: str = Query(..., description="Entity name to check")):
+    """Check if an entity exists"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement entity existence check
+        return {"exists": False}
+        
+    except Exception as e:
+        logger.error(f"Error checking entity existence: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/graph/entity/edit")
+async def update_entity(request: EntityUpdateRequest):
+    """Update an entity in the knowledge graph"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement entity update
+        return DocActionResponse(
+            status="success",
+            message=f"Entity '{request.entity_name}' updated successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error updating entity: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/graph/relation/edit")
+async def update_relation(request: RelationUpdateRequest):
+    """Update a relation in the knowledge graph"""
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="Pipeline not initialized")
+        
+        # TODO: Implement relation update
+        return DocActionResponse(
+            status="success",
+            message=f"Relation between '{request.source_entity}' and '{request.target_entity}' updated successfully"
+        )
+        
+    except Exception as e:
+        logger.error(f"Error updating relation: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Global Exception Handler ---
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    """Global exception handler"""
+    logger.error(f"Unhandled exception: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc)}
+    )
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "api_server:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info"
+    )
+
+rag_pipeline:
+#!/usr/bin/env python3
+"""
+Production-Ready LightRAG Pipeline with Gemini LLM
+
+This is a comprehensive RAG pipeline that includes:
+- Gemini LLM integration with token tracking
+- Efficient text chunking with Gemini tokenizer
+- Advanced caching with multiple modes
+- Reranker integration with mix mode as default
+- Query parameter controls
+- Data isolation between instances
+- Multimodal document processing (RAG-Anything)
+- Environment-based configuration
+- Production-ready logging and error handling
+"""
+
+import os
+import asyncio
+import logging
+import logging.config
+import numpy as np
+import nest_asyncio
+from pathlib import Path
+from typing import Optional, List, Dict, Any
+from dataclasses import dataclass
+from dotenv import load_dotenv
+from google import genai
+from google.genai import types
+from sentence_transformers import SentenceTransformer
+import hashlib
+import requests
+import sentencepiece as spm
+
+# LightRAG imports
+from lightrag import LightRAG, QueryParam
+from lightrag.utils import EmbeddingFunc, setup_logger, TokenTracker, Tokenizer
+from lightrag.kg.shared_storage import initialize_pipeline_status
+from lightrag.rerank import custom_rerank, RerankModel
+from lightrag.llm_rerank import LLMReranker, AdaptiveLLMReranker, create_llm_reranker
+from llm_rerank_robust import create_robust_llm_reranker
+
+# Apply nest_asyncio to solve event loop issues
+nest_asyncio.apply()
+
+# Load environment variables
+load_dotenv()
+
+
+class GemmaTokenizer(Tokenizer):
+    """Gemini-compatible tokenizer using Gemma models"""
+    
+    @dataclass(frozen=True)
+    class _TokenizerConfig:
+        tokenizer_model_url: str
+        tokenizer_model_hash: str
+
+    _TOKENIZERS = {
+        "google/gemma2": _TokenizerConfig(
+            tokenizer_model_url="https://raw.githubusercontent.com/google/gemma_pytorch/33b652c465537c6158f9a472ea5700e5e770ad3f/tokenizer/tokenizer.model",
+            tokenizer_model_hash="61a7b147390c64585d6c3543dd6fc636906c9af3865a5548f27f31aee1d4c8e2",
+        ),
+        "google/gemma3": _TokenizerConfig(
+            tokenizer_model_url="https://raw.githubusercontent.com/google/gemma_pytorch/cb7c0152a369e43908e769eb09e1ce6043afe084/tokenizer/gemma3_cleaned_262144_v2.spiece.model",
+            tokenizer_model_hash="1299c11d7cf632ef3b4e11937501358ada021bbdf7c47638d13c0ee982f2e79c",
+        ),
+    }
+
+    def __init__(
+        self, model_name: str = "gemini-2.0-flash", tokenizer_dir: Optional[str] = None
+    ):
+        # https://github.com/google/gemma_pytorch/tree/main/tokenizer
+        if "1.5" in model_name or "1.0" in model_name:
+            # up to gemini 1.5 gemma2 is a comparable local tokenizer
+            # https://github.com/googleapis/python-aiplatform/blob/main/vertexai/tokenization/_tokenizer_loading.py
+            tokenizer_name = "google/gemma2"
+        else:
+            # for gemini > 2.0 gemma3 was used
+            tokenizer_name = "google/gemma3"
+
+        file_url = self._TOKENIZERS[tokenizer_name].tokenizer_model_url
+        tokenizer_model_name = file_url.rsplit("/", 1)[1]
+        expected_hash = self._TOKENIZERS[tokenizer_name].tokenizer_model_hash
+
+        tokenizer_dir_path = Path(tokenizer_dir) if tokenizer_dir else Path("./tokenizer_cache")
+        if tokenizer_dir_path.is_dir():
+            file_path = tokenizer_dir_path / tokenizer_model_name
+            model_data = self._maybe_load_from_cache(
+                file_path=file_path, expected_hash=expected_hash
+            )
+        else:
+            model_data = None
+        if not model_data:
+            model_data = self._load_from_url(
+                file_url=file_url, expected_hash=expected_hash
+            )
+            self.save_tokenizer_to_cache(cache_path=file_path, model_data=model_data)
+
+        tokenizer = spm.SentencePieceProcessor()
+        tokenizer.LoadFromSerializedProto(model_data)
+        super().__init__(model_name=model_name, tokenizer=tokenizer)
+
+    def _is_valid_model(self, model_data: bytes, expected_hash: str) -> bool:
+        """Returns true if the content is valid by checking the hash."""
+        return hashlib.sha256(model_data).hexdigest() == expected_hash
+
+    def _maybe_load_from_cache(self, file_path: Path, expected_hash: str) -> Optional[bytes]:
+        """Loads the model data from the cache path."""
+        if not file_path.is_file():
+            return None
+        with open(file_path, "rb") as f:
+            content = f.read()
+        if self._is_valid_model(model_data=content, expected_hash=expected_hash):
+            return content
+
+        # Cached file corrupted.
+        self._maybe_remove_file(file_path)
+        return None
+
+    def _load_from_url(self, file_url: str, expected_hash: str) -> bytes:
+        """Loads model bytes from the given file url."""
+        resp = requests.get(file_url)
+        resp.raise_for_status()
+        content = resp.content
+
+        if not self._is_valid_model(model_data=content, expected_hash=expected_hash):
+            actual_hash = hashlib.sha256(content).hexdigest()
+            raise ValueError(
+                f"Downloaded model file is corrupted."
+                f" Expected hash {expected_hash}. Got file hash {actual_hash}."
+            )
+        return content
+
+    @staticmethod
+    def save_tokenizer_to_cache(cache_path: Path, model_data: bytes) -> None:
+        """Saves the model data to the cache path."""
+        try:
+            if not cache_path.is_file():
+                cache_dir = cache_path.parent
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                with open(cache_path, "wb") as f:
+                    f.write(model_data)
+        except OSError:
+            # Don't raise if we cannot write file.
+            pass
+
+    @staticmethod
+    def _maybe_remove_file(file_path: Path) -> None:
+        """Removes the file if exists."""
+        if not file_path.is_file():
+            return
+        try:
+            file_path.unlink()
+        except OSError:
+            # Don't raise if we cannot remove file.
+            pass
+
+
+@dataclass
+class RAGConfig:
+    """Configuration for the RAG pipeline"""
+    
+    # Environment variables - all required
+    GEMINI_API_KEY: str = None
+    WORKING_DIR: str = None
+    WORKSPACE: str = None
+    LOG_LEVEL: str = "INFO"
+    VERBOSE: bool = False
+    
+    # LLM Configuration
+    LLM_MODEL: str = "gemini-2.0-flash"
+    LLM_MAX_OUTPUT_TOKENS: int = 5000
+    LLM_TEMPERATURE: float = 0.1
+    LLM_TOP_K: int = 10
+    
+    # Embedding Configuration (Gemini Native)
+    EMBEDDING_MODEL: str = "text-embedding-004"
+    EMBEDDING_DIM: int = 768
+    EMBEDDING_MAX_TOKEN_SIZE: int = 512
+    
+    # Reranker Configuration
+    RERANK_MODEL: str = "BAAI/bge-reranker-v2-m3"
+    RERANK_BINDING_HOST: str = None
+    RERANK_BINDING_API_KEY: str = None
+    ENABLE_RERANK: bool = True
+    RERANK_STRATEGY: str = "semantic_scoring"  # semantic_scoring, relevance_ranking, hybrid
+    RERANK_BATCH_SIZE: int = 5
+    RERANK_MAX_CONCURRENT: int = 3
+    RERANK_CACHE_ENABLED: bool = True
+    
+    # Chunking Configuration
+    CHUNK_SIZE: int = 1200
+    CHUNK_OVERLAP_SIZE: int = 100
+    
+    # Cache Configuration
+    ENABLE_LLM_CACHE: bool = True
+    ENABLE_LLM_CACHE_FOR_ENTITY_EXTRACT: bool = True
+    ENABLE_EMBEDDING_CACHE: bool = True
+    EMBEDDING_CACHE_SIMILARITY_THRESHOLD: float = 0.90
+    
+    # Query Configuration
+    DEFAULT_QUERY_MODE: str = "mix"  # Default to mix mode when reranker is enabled
+    TOP_K: int = 40
+    CHUNK_TOP_K: int = 10
+    MAX_ENTITY_TOKENS: int = 10000
+    MAX_RELATION_TOKENS: int = 10000
+    MAX_TOTAL_TOKENS: int = 32000
+    HISTORY_TURNS: int = 3
+    
+    # Processing Configuration
+    MAX_ASYNC: int = 4
+    MAX_PARALLEL_INSERT: int = 2
+    ENTITY_EXTRACT_MAX_GLEANING: int = 1
+    
+    # Tokenizer Configuration
+    TOKENIZER_DIR: str = "./tokenizer_cache"
+    
+    def __post_init__(self):
+        """Validate and set default values from environment"""
+        # Required environment variables
+        self.GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+        if not self.GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY environment variable is required")
+        
+        # Working directory and workspace
+        self.WORKING_DIR = os.getenv("WORKING_DIR", "./rag_storage")
+        self.WORKSPACE = os.getenv("WORKSPACE", "")
+        
+        # Logging configuration
+        self.LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO")
+        self.VERBOSE = os.getenv("VERBOSE", "false").lower() == "true"
+        
+        # LLM configuration
+        self.LLM_MODEL = os.getenv("LLM_MODEL", "gemini-2.0-flash")
+        self.LLM_MAX_OUTPUT_TOKENS = int(os.getenv("LLM_MAX_OUTPUT_TOKENS", "5000"))
+        self.LLM_TEMPERATURE = float(os.getenv("LLM_TEMPERATURE", "0.1"))
+        self.LLM_TOP_K = int(os.getenv("LLM_TOP_K", "10"))
+        
+        # Embedding configuration (Gemini Native)
+        self.EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-004")
+        self.EMBEDDING_DIM = int(os.getenv("EMBEDDING_DIM", "768"))
+        self.EMBEDDING_MAX_TOKEN_SIZE = int(os.getenv("EMBEDDING_MAX_TOKEN_SIZE", "512"))
+        
+        # Reranker configuration
+        self.RERANK_MODEL = os.getenv("RERANK_MODEL", "BAAI/bge-reranker-v2-m3")
+        self.RERANK_BINDING_HOST = os.getenv("RERANK_BINDING_HOST")
+        self.RERANK_BINDING_API_KEY = os.getenv("RERANK_BINDING_API_KEY")
+        self.ENABLE_RERANK = os.getenv("ENABLE_RERANK", "true").lower() == "true"
+        self.RERANK_STRATEGY = os.getenv("RERANK_STRATEGY", "semantic_scoring")
+        self.RERANK_BATCH_SIZE = int(os.getenv("RERANK_BATCH_SIZE", "5"))
+        self.RERANK_MAX_CONCURRENT = int(os.getenv("RERANK_MAX_CONCURRENT", "3"))
+        self.RERANK_CACHE_ENABLED = os.getenv("RERANK_CACHE_ENABLED", "true").lower() == "true"
+        
+        # Chunking configuration
+        self.CHUNK_SIZE = int(os.getenv("CHUNK_SIZE", "1200"))
+        self.CHUNK_OVERLAP_SIZE = int(os.getenv("CHUNK_OVERLAP_SIZE", "100"))
+        
+        # Cache configuration
+        self.ENABLE_LLM_CACHE = os.getenv("ENABLE_LLM_CACHE", "true").lower() == "true"
+        self.ENABLE_LLM_CACHE_FOR_ENTITY_EXTRACT = os.getenv("ENABLE_LLM_CACHE_FOR_ENTITY_EXTRACT", "true").lower() == "true"
+        self.ENABLE_EMBEDDING_CACHE = os.getenv("ENABLE_EMBEDDING_CACHE", "true").lower() == "true"
+        self.EMBEDDING_CACHE_SIMILARITY_THRESHOLD = float(os.getenv("EMBEDDING_CACHE_SIMILARITY_THRESHOLD", "0.90"))
+        
+        # Query configuration
+        self.DEFAULT_QUERY_MODE = os.getenv("DEFAULT_QUERY_MODE", "mix" if self.ENABLE_RERANK else "hybrid")
+        self.TOP_K = int(os.getenv("TOP_K", "40"))
+        self.CHUNK_TOP_K = int(os.getenv("CHUNK_TOP_K", "10"))
+        self.MAX_ENTITY_TOKENS = int(os.getenv("MAX_ENTITY_TOKENS", "10000"))
+        self.MAX_RELATION_TOKENS = int(os.getenv("MAX_RELATION_TOKENS", "10000"))
+        self.MAX_TOTAL_TOKENS = int(os.getenv("MAX_TOTAL_TOKENS", "32000"))
+        self.HISTORY_TURNS = int(os.getenv("HISTORY_TURNS", "3"))
+        
+        # Processing configuration
+        self.MAX_ASYNC = int(os.getenv("MAX_ASYNC", "4"))
+        self.MAX_PARALLEL_INSERT = int(os.getenv("MAX_PARALLEL_INSERT", "2"))
+        self.ENTITY_EXTRACT_MAX_GLEANING = int(os.getenv("ENTITY_EXTRACT_MAX_GLEANING", "1"))
+        
+        # Tokenizer configuration
+        self.TOKENIZER_DIR = os.getenv("TOKENIZER_DIR", "./tokenizer_cache")
+
+
+class ProductionRAGPipeline:
+    """Production-ready RAG pipeline with all advanced features"""
+    
+    def __init__(self, config: RAGConfig):
+        self.config = config
+        self.token_tracker = TokenTracker()
+        self.rag = None
+        self._setup_logging()
+        self._setup_gemini_tokenizer()
+        
+    def _setup_logging(self):
+        """Setup comprehensive logging configuration"""
+        log_dir = os.getenv("LOG_DIR", os.getcwd())
+        log_file_path = os.path.abspath(os.path.join(log_dir, "production_rag.log"))
+        
+        # Create log directory if it doesn't exist
+        os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+        
+        # Get log configuration from environment
+        log_max_bytes = int(os.getenv("LOG_MAX_BYTES", 10485760))  # Default 10MB
+        log_backup_count = int(os.getenv("LOG_BACKUP_COUNT", 5))  # Default 5 backups
+        
+        logging.config.dictConfig({
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": "%(levelname)s: %(message)s",
+                },
+                "detailed": {
+                    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                },
+            },
+            "handlers": {
+                "console": {
+                    "formatter": "default",
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://sys.stderr",
+                },
+                "file": {
+                    "formatter": "detailed",
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "filename": log_file_path,
+                    "maxBytes": log_max_bytes,
+                    "backupCount": log_backup_count,
+                    "encoding": "utf-8",
+                },
+            },
+            "loggers": {
+                "lightrag": {
+                    "handlers": ["console", "file"],
+                    "level": self.config.LOG_LEVEL,
+                    "propagate": False,
+                },
+                "production_rag": {
+                    "handlers": ["console", "file"],
+                    "level": self.config.LOG_LEVEL,
+                    "propagate": False,
+                },
+            },
+        })
+        
+        self.logger = logging.getLogger("production_rag")
+        setup_logger("lightrag", level=self.config.LOG_LEVEL)
+        
+        if self.config.VERBOSE:
+            from lightrag.utils import set_verbose_debug
+            set_verbose_debug(True)
+    
+    def _setup_gemini_tokenizer(self):
+        """Setup Gemini tokenizer for efficient chunking"""
+        try:
+            # Use GemmaTokenizer for Gemini tokenization
+            self.tokenizer = GemmaTokenizer(
+                model_name=self.config.LLM_MODEL,
+                tokenizer_dir=self.config.TOKENIZER_DIR
+            )
+            self.logger.info("GemmaTokenizer initialized successfully")
+        except Exception as e:
+            self.logger.warning(f"Failed to initialize GemmaTokenizer: {e}")
+            self.tokenizer = None
+    
+    async def _llm_model_func(
+        self, 
+        prompt: str, 
+        system_prompt: str = None, 
+        history_messages: List[Dict[str, str]] = [], 
+        keyword_extraction: bool = False, 
+        **kwargs
+    ) -> str:
+        """Gemini LLM model function with token tracking"""
+        try:
+            # Initialize Gemini client
+            client = genai.Client(api_key=self.config.GEMINI_API_KEY)
+            
+            # Combine prompts
+            if history_messages is None:
+                history_messages = []
+            
+            combined_prompt = ""
+            if system_prompt:
+                combined_prompt += f"{system_prompt}\n"
+            
+            for msg in history_messages:
+                combined_prompt += f"{msg['role']}: {msg['content']}\n"
+            
+            combined_prompt += f"user: {prompt}"
+            
+            # Call Gemini model
+            response = client.models.generate_content(
+                model=self.config.LLM_MODEL,
+                contents=[combined_prompt],
+                config=types.GenerateContentConfig(
+                    max_output_tokens=self.config.LLM_MAX_OUTPUT_TOKENS,
+                    temperature=self.config.LLM_TEMPERATURE,
+                    top_k=self.config.LLM_TOP_K,
+                ),
+            )
+            
+            # Track token usage
+            usage = getattr(response, "usage_metadata", None)
+            prompt_tokens = getattr(usage, "prompt_token_count", 0) or 0
+            completion_tokens = getattr(usage, "candidates_token_count", 0) or 0
+            total_tokens = getattr(usage, "total_token_count", 0) or (prompt_tokens + completion_tokens)
+            
+            token_counts = {
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            }
+            
+            self.token_tracker.add_usage(token_counts)
+            
+            return response.text
+            
+        except Exception as e:
+            self.logger.error(f"Error in LLM model function: {e}")
+            raise
+    
+    async def _embedding_func(self, texts: List[str]) -> np.ndarray:
+        """Gemini native embedding function"""
+        try:
+            client = genai.Client(api_key=self.config.GEMINI_API_KEY)
+            
+            embeddings = []
+            for text in texts:
+                response = client.models.embed_content(
+                    model=self.config.EMBEDDING_MODEL,
+                    contents=text
+                )
+                # Extract the actual embedding values from ContentEmbedding object
+                embedding_values = response.embeddings[0].values
+                embeddings.append(embedding_values)
+            
+            return np.array(embeddings)
+        except Exception as e:
+            self.logger.error(f"Error in Gemini embedding function: {e}")
+            raise
+    
+    async def _rerank_func(self, query: str, documents: List[Dict], top_k: int = None, **kwargs):
+        """Robust LLM-based rerank function with better error handling"""
+        if not self.config.ENABLE_RERANK:
+            return documents[:top_k] if top_k else documents
+        
+        try:
+            # Use robust LLM-based reranking
+            robust_reranker = create_robust_llm_reranker(
+                llm_func=self._llm_model_func,
+                max_retries=3,
+                retry_delay=2.0,  # Increased delay for rate limiting
+                max_concurrent=self.config.RERANK_MAX_CONCURRENT,
+                batch_size=self.config.RERANK_BATCH_SIZE,
+                timeout=45.0,  # Increased timeout
+                enable_cache=self.config.RERANK_CACHE_ENABLED,
+                strategy=self.config.RERANK_STRATEGY
+            )
+            
+            return await robust_reranker.rerank(
+                query=query,
+                documents=documents,
+                top_k=top_k or self.config.CHUNK_TOP_K
+            )
+        except Exception as e:
+            self.logger.warning(f"Robust LLM rerank failed, returning original documents: {e}")
+            return documents[:top_k] if top_k else documents
+    
+    async def initialize(self):
+        """Initialize the RAG pipeline"""
+        try:
+            self.logger.info("Initializing production RAG pipeline...")
+            
+            # Create working directory if it doesn't exist
+            os.makedirs(self.config.WORKING_DIR, exist_ok=True)
+            
+            # Initialize LightRAG with all configurations
+            self.rag = LightRAG(
+                working_dir=self.config.WORKING_DIR,
+                workspace=self.config.WORKSPACE,
+                entity_extract_max_gleaning=self.config.ENTITY_EXTRACT_MAX_GLEANING,
+                enable_llm_cache=self.config.ENABLE_LLM_CACHE,
+                enable_llm_cache_for_entity_extract=self.config.ENABLE_LLM_CACHE_FOR_ENTITY_EXTRACT,
+                embedding_cache_config={
+                    "enabled": self.config.ENABLE_EMBEDDING_CACHE,
+                    "similarity_threshold": self.config.EMBEDDING_CACHE_SIMILARITY_THRESHOLD
+                },
+                tokenizer=GemmaTokenizer(
+                    tokenizer_dir=self.config.TOKENIZER_DIR,
+                    model_name=self.config.LLM_MODEL,
+                ),
+                llm_model_func=self._llm_model_func,
+                embedding_func=EmbeddingFunc(
+                    embedding_dim=self.config.EMBEDDING_DIM,
+                    max_token_size=8192,
+                    func=self._embedding_func,
+                ),
+                rerank_model_func=self._rerank_func,
+            )
+            
+            # Initialize storages
+            await self.rag.initialize_storages()
+            await initialize_pipeline_status()
+            
+            self.logger.info("Production RAG pipeline initialized successfully")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize RAG pipeline: {e}")
+            raise
+    
+    async def insert_documents(self, documents: List[str]) -> Dict[str, Any]:
+        """Insert documents into the RAG pipeline"""
+        try:
+            self.logger.info(f"Inserting {len(documents)} documents...")
+            
+            results = []
+            for i, doc in enumerate(documents):
+                try:
+                    result = await self.rag.ainsert(doc)
+                    results.append({"index": i, "status": "success", "result": result})
+                    self.logger.debug(f"Document {i+1}/{len(documents)} inserted successfully")
+                except Exception as e:
+                    results.append({"index": i, "status": "error", "error": str(e)})
+                    self.logger.error(f"Failed to insert document {i+1}: {e}")
+            
+            success_count = len([r for r in results if r["status"] == "success"])
+            self.logger.info(f"Inserted {success_count}/{len(documents)} documents successfully")
+            
+            return {
+                "total_documents": len(documents),
+                "successful_insertions": success_count,
+                "results": results
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error inserting documents: {e}")
+            raise
+    
+    async def query(
+        self, 
+        query: str, 
+        mode: str = None,
+        user_prompt: str = None,
+        top_k: int = None,
+        chunk_top_k: int = None,
+        enable_rerank: bool = None,
+        response_type: str = "Multiple Paragraphs",
+        conversation_history: List[Dict[str, str]] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Query the RAG pipeline with comprehensive parameters"""
+        try:
+            # Use default mode if reranker is enabled
+            if mode is None:
+                mode = self.config.DEFAULT_QUERY_MODE
+            
+            # Use default values if not provided
+            if top_k is None:
+                top_k = self.config.TOP_K
+            if chunk_top_k is None:
+                chunk_top_k = self.config.CHUNK_TOP_K
+            if enable_rerank is None:
+                enable_rerank = self.config.ENABLE_RERANK
+            
+            # Create query parameters
+            query_param = QueryParam(
+                mode=mode,
+                top_k=top_k,
+                chunk_top_k=chunk_top_k,
+                enable_rerank=enable_rerank,
+                response_type=response_type,
+                conversation_history=conversation_history or [],
+                history_turns=self.config.HISTORY_TURNS,
+                max_entity_tokens=self.config.MAX_ENTITY_TOKENS,
+                max_relation_tokens=self.config.MAX_RELATION_TOKENS,
+                max_total_tokens=self.config.MAX_TOTAL_TOKENS,
+                user_prompt=user_prompt,
+                **kwargs
+            )
+            
+            self.logger.info(f"Querying with mode: {mode}, top_k: {top_k}, enable_rerank: {enable_rerank}")
+            
+            # Execute query with token tracking
+            with self.token_tracker:
+                response = await self.rag.aquery(query, param=query_param)
+            
+            # Get token usage statistics
+            token_stats = self.token_tracker.get_usage()
+            
+            return {
+                "response": response,
+                "query_mode": mode,
+                "token_usage": token_stats,
+                "query_params": {
+                    "top_k": top_k,
+                    "chunk_top_k": chunk_top_k,
+                    "enable_rerank": enable_rerank,
+                    "response_type": response_type,
+                    "user_prompt": user_prompt
+                }
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error in query: {e}")
+            raise
+    
+    async def clear_cache(self, modes: List[str] = None) -> Dict[str, Any]:
+        """Clear LLM response cache with different modes"""
+        try:
+            self.logger.info(f"Clearing cache for modes: {modes or 'all'}")
+            
+            # Convert custom mode names to LightRAG valid modes
+            mode_mapping = {
+                "query": "default",
+                "entity_extract": "default", 
+                "relation_extract": "default",
+                "summary": "default"
+            }
+            
+            if modes:
+                # Map custom modes to LightRAG modes
+                lightrag_modes = []
+                for mode in modes:
+                    if mode in mode_mapping:
+                        lightrag_modes.append(mode_mapping[mode])
+                    else:
+                        # If it's already a valid LightRAG mode, use it directly
+                        lightrag_modes.append(mode)
+                
+                # Remove duplicates
+                lightrag_modes = list(set(lightrag_modes))
+                await self.rag.aclear_cache(lightrag_modes)
+            else:
+                # Clear all caches
+                await self.rag.aclear_cache()
+            
+            return {
+                "status": "success",
+                "message": f"Cache cleared for modes: {modes or 'all'}",
+                "modes_cleared": modes or "all"
+            }
+            
+        except Exception as e:
+            self.logger.error(f"Error clearing cache: {e}")
+            return {
+                "status": "error",
+                "message": str(e),
+                "modes_cleared": []
+            }
+    
+    async def get_token_usage_stats(self) -> Dict[str, Any]:
+        """Get comprehensive token usage statistics"""
+        try:
+            stats = self.token_tracker.get_usage()
+            total_requests = stats.get("call_count", 0)
+            total_tokens = stats.get("total_tokens", 0)
+            prompt_tokens = stats.get("prompt_tokens", 0)
+            completion_tokens = stats.get("completion_tokens", 0)
+            
+            # Calculate average tokens per request
+            average_tokens_per_request = (
+                total_tokens / total_requests if total_requests > 0 else 0
+            )
+            
+            # Simple cost estimation (you can adjust rates as needed)
+            # Assuming $0.001 per 1K tokens for input and $0.002 per 1K tokens for output
+            cost_estimation = (
+                (prompt_tokens * 0.001 / 1000) + 
+                (completion_tokens * 0.002 / 1000)
+            )
+            
+            return {
+                "total_requests": total_requests,
+                "total_tokens": total_tokens,
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "average_tokens_per_request": average_tokens_per_request,
+                "cost_estimation": cost_estimation
+            }
+        except Exception as e:
+            self.logger.error(f"Error getting token usage stats: {e}")
+            return {"error": str(e)}
+    
+    async def finalize(self):
+        """Clean up resources"""
+        try:
+            if self.rag:
+                await self.rag.finalize_storages()
+            self.logger.info("Production RAG pipeline finalized successfully")
+        except Exception as e:
+            self.logger.error(f"Error finalizing RAG pipeline: {e}")
+
+
+async def main():
+    """Main function demonstrating the production RAG pipeline"""
+    try:
+        # Initialize configuration
+        config = RAGConfig()
+        
+        # Create and initialize the pipeline
+        pipeline = ProductionRAGPipeline(config)
+        await pipeline.initialize()
+        
+        # Example usage
+        print("🚀 Production RAG Pipeline Demo")
+        print("=" * 50)
+        
+        # Show tokenizer information
+        print(f"📝 Using GemmaTokenizer for model: {config.LLM_MODEL}")
+        print(f"📁 Tokenizer cache directory: {config.TOKENIZER_DIR}")
+        print()
+        
+        # Insert sample documents
+        sample_docs = [
+            "LightRAG is a powerful retrieval-augmented generation system that combines knowledge graphs with vector search.",
+            "The system supports multiple query modes including naive, local, global, hybrid, mix, and bypass.",
+            "Reranking improves retrieval quality by re-ordering documents based on relevance to the query.",
+            "Token tracking helps monitor usage and costs across different LLM providers.",
+            "Caching mechanisms improve performance by storing frequently used embeddings and LLM responses.",
+            "GemmaTokenizer provides efficient text chunking optimized for Gemini models."
+        ]
+        
+        print("\n📄 Inserting sample documents...")
+        insert_result = await pipeline.insert_documents(sample_docs)
+        print(f"Inserted {insert_result['successful_insertions']}/{insert_result['total_documents']} documents")
+        
+        # Example queries with different modes
+        queries = [
+            {
+                "query": "What is LightRAG and how does it work?",
+                "mode": "hybrid",
+                "user_prompt": "Provide a comprehensive explanation with examples."
+            },
+            {
+                "query": "Explain the different query modes available",
+                "mode": "mix",
+                "user_prompt": "Create a comparison table of the modes."
+            },
+            {
+                "query": "How does reranking improve retrieval?",
+                "mode": "local",
+                "user_prompt": "Focus on practical benefits and implementation details."
+            }
+        ]
+        
+        for i, query_info in enumerate(queries, 1):
+            print(f"\n🔍 Query {i}: {query_info['query']}")
+            print(f"Mode: {query_info['mode']}")
+            
+            result = await pipeline.query(
+                query=query_info['query'],
+                mode=query_info['mode'],
+                user_prompt=query_info['user_prompt']
+            )
+            
+            print(f"Response: {result['response'][:200]}...")
+            print(f"Token Usage: {result['token_usage']}")
+        
+        # Get token usage statistics
+        print("\n📊 Token Usage Statistics:")
+        token_stats = await pipeline.get_token_usage_stats()
+        for key, value in token_stats.items():
+            print(f"  {key}: {value}")
+        
+        # Clear cache example
+        print("\n🧹 Clearing cache...")
+        cache_result = await pipeline.clear_cache(["query", "entity_extract"])
+        print(f"Cache clear result: {cache_result}")
+        
+        # Finalize
+        await pipeline.finalize()
+        print("\n✅ Demo completed successfully!")
+        
+    except Exception as e:
+        print(f"❌ Error in demo: {e}")
+        logging.error(f"Demo failed: {e}")
+
+
+if __name__ == "__main__":
+    asyncio.run(main()) 
+
+backend:
+#!/usr/bin/env python3
+"""
+LightRAG Backend Startup Script
+
+This script starts the LightRAG API server with proper configuration.
+"""
+
+import os
+import sys
+import uvicorn
+from pathlib import Path
+
+def main():
+    """Start the LightRAG API server"""
+    
+    # Check if we're in the right directory
+    if not Path("api_server.py").exists():
+        print("❌ Error: api_server.py not found in current directory")
+        print("Please run this script from the LightRAG directory")
+        sys.exit(1)
+    
+    # Check for environment file
+    env_file = ".env"
+    if not Path(env_file).exists():
+        print(f"⚠️  Warning: {env_file} not found")
+        print("Please create .env with your configuration")
+        print("You can copy from env.example")
+    
+    print("🚀 Starting LightRAG API Server...")
+    print("📖 API Documentation: http://localhost:8000/docs")
+    print("🔍 Health Check: http://localhost:8000/health")
+    print("=" * 50)
+    
+    # Start the server
+    uvicorn.run(
+        "api_server:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True,
+        log_level="info",
+        access_log=True
+    )
+
+if __name__ == "__main__":
+    main()
+
+frontend:
+#!/usr/bin/env python3
+"""
+LightRAG Frontend Startup Script
+
+This script starts the LightRAG web UI with proper configuration.
+"""
+
+import os
+import sys
+import subprocess
+from pathlib import Path
+
+def main():
+    """Start the LightRAG frontend"""
+    
+    # Check if we're in the right directory
+    if not Path("lightrag_webui").exists():
+        print("❌ Error: lightrag_webui directory not found")
+        print("Please run this script from the LightRAG directory")
+        sys.exit(1)
+    
+    # Change to webui directory
+    webui_dir = Path("lightrag_webui")
+    os.chdir(webui_dir)
+    
+    # Check for package.json
+    if not Path("package.json").exists():
+        print("❌ Error: package.json not found in lightrag_webui")
+        print("Please ensure the frontend is properly set up")
+        sys.exit(1)
+    
+    # Check for environment file
+    env_file = ".env.local"
+    if not Path(env_file).exists():
+        print(f"⚠️  Warning: {env_file} not found")
+        print("Creating default .env.local...")
+        
+        # Create default environment file
+        with open(env_file, "w") as f:
+            f.write("""VITE_API_URL=http://localhost:8000
+""")
+        print("✅ Created .env.local with default configuration")
+    
+    print("🚀 Starting LightRAG Frontend...")
+    print("🌐 Web UI: http://localhost:5173")
+    print("📖 API Backend: http://localhost:8000")
+    print("=" * 50)
+    
+    # Check if node_modules exists
+    if not Path("node_modules").exists():
+        print("📦 Installing dependencies...")
+        try:
+            subprocess.run(["npm", "install"], check=True)
+            print("✅ Dependencies installed")
+        except subprocess.CalledProcessError:
+            print("❌ Failed to install dependencies")
+            sys.exit(1)
+    
+    # Start the development server
+    try:
+        print("🎯 Starting development server...")
+        subprocess.run(["npm", "run", "dev"], check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to start frontend: {e}")
+        sys.exit(1)
+    except KeyboardInterrupt:
+        print("\n👋 Frontend stopped by user")
+
+if __name__ == "__main__":
+    main()
+
+reranking: 
+#!/usr/bin/env python3
+"""
+Robust LLM-based Reranking Implementation
+
+This module provides a more robust implementation of LLM-based reranking
+with better error handling, rate limiting, and fallback mechanisms.
+"""
+
+import asyncio
+import json
+import logging
+import time
+from typing import List, Dict, Any, Optional
+from dataclasses import dataclass
+from enum import Enum
+
+logger = logging.getLogger(__name__)
+
+
+class RerankStrategy(Enum):
+    """Reranking strategies"""
+    SEMANTIC_SCORING = "semantic_scoring"
+    RELEVANCE_RANKING = "relevance_ranking"
+    HYBRID = "hybrid"
+
+
+@dataclass
+class RerankConfig:
+    """Configuration for LLM reranking"""
+    max_retries: int = 3
+    retry_delay: float = 1.0
+    max_concurrent: int = 3
+    batch_size: int = 5
+    timeout: float = 30.0
+    enable_cache: bool = True
+    strategy: RerankStrategy = RerankStrategy.SEMANTIC_SCORING
+
+
+class RobustLLMReranker:
+    """Robust LLM-based reranker with error handling and rate limiting"""
+    
+    def __init__(self, llm_func, config: RerankConfig):
+        self.llm_func = llm_func
+        self.config = config
+        self.semaphore = asyncio.Semaphore(config.max_concurrent)
+        self.cache = {} if config.enable_cache else None
+        
+    async def rerank(
+        self, 
+        query: str, 
+        documents: List[Dict], 
+        top_k: Optional[int] = None
+    ) -> List[Dict]:
+        """Rerank documents using LLM with robust error handling"""
+        
+        if not documents:
+            return []
+        
+        # Limit to top_k if specified
+        if top_k:
+            documents = documents[:top_k]
+        
+        try:
+            # Try to get cached results first
+            cache_key = self._get_cache_key(query, documents)
+            if self.cache and cache_key in self.cache:
+                logger.debug("Using cached rerank results")
+                return self.cache[cache_key]
+            
+            # Process documents in batches
+            reranked_docs = await self._process_batches(query, documents)
+            
+            # Cache results if enabled
+            if self.cache:
+                self.cache[cache_key] = reranked_docs
+            
+            return reranked_docs
+            
+        except Exception as e:
+            logger.error(f"Reranking failed, returning original documents: {e}")
+            return documents[:top_k] if top_k else documents
+    
+    async def _process_batches(self, query: str, documents: List[Dict]) -> List[Dict]:
+        """Process documents in batches with error handling"""
+        
+        batches = [
+            documents[i:i + self.config.batch_size] 
+            for i in range(0, len(documents), self.config.batch_size)
+        ]
+        
+        all_results = []
+        
+        for batch_idx, batch in enumerate(batches):
+            try:
+                logger.debug(f"Processing rerank batch {batch_idx + 1}/{len(batches)}")
+                
+                # Process batch with semaphore for rate limiting
+                async with self.semaphore:
+                    batch_results = await self._process_single_batch(query, batch)
+                    all_results.extend(batch_results)
+                    
+                    # Add delay between batches to avoid rate limiting
+                    if batch_idx < len(batches) - 1:
+                        await asyncio.sleep(0.5)
+                        
+            except Exception as e:
+                logger.warning(f"Batch {batch_idx + 1} failed, using original order: {e}")
+                all_results.extend(batch)
+        
+        return all_results
+    
+    async def _process_single_batch(self, query: str, batch: List[Dict]) -> List[Dict]:
+        """Process a single batch of documents"""
+        
+        for attempt in range(self.config.max_retries):
+            try:
+                # Create prompt based on strategy
+                prompt = self._create_rerank_prompt(query, batch)
+                
+                # Call LLM with timeout
+                response = await asyncio.wait_for(
+                    self.llm_func(prompt),
+                    timeout=self.config.timeout
+                )
+                
+                # Parse response
+                parsed_results = self._parse_rerank_response(response, batch)
+                
+                if parsed_results:
+                    return parsed_results
+                else:
+                    logger.warning(f"Failed to parse rerank response on attempt {attempt + 1}")
+                    
+            except asyncio.TimeoutError:
+                logger.warning(f"Rerank timeout on attempt {attempt + 1}")
+            except Exception as e:
+                logger.warning(f"Rerank error on attempt {attempt + 1}: {e}")
+            
+            # Wait before retry
+            if attempt < self.config.max_retries - 1:
+                await asyncio.sleep(self.config.retry_delay * (attempt + 1))
+        
+        # If all attempts failed, return original batch
+        logger.warning("All rerank attempts failed, returning original order")
+        return batch
+    
+    def _create_rerank_prompt(self, query: str, documents: List[Dict]) -> str:
+        """Create rerank prompt based on strategy"""
+        
+        docs_text = "\n\n".join([
+            f"Document {i+1}: {doc.get('content', '')[:500]}..."
+            for i, doc in enumerate(documents)
+        ])
+        
+        if self.config.strategy == RerankStrategy.SEMANTIC_SCORING:
+            return f"""Please rerank the following documents based on their relevance to the query.
+
+Query: {query}
+
+Documents:
+{docs_text}
+
+Please provide your response as a JSON array with the following format:
+[
+  {{"index": 0, "score": 0.95, "reasoning": "This document is highly relevant because..."}},
+  {{"index": 1, "score": 0.75, "reasoning": "This document is moderately relevant because..."}},
+  ...
+]
+
+Score each document from 0.0 to 1.0 based on relevance to the query. Higher scores indicate better relevance."""
+
+        elif self.config.strategy == RerankStrategy.RELEVANCE_RANKING:
+            return f"""Please rank the following documents by relevance to the query.
+
+Query: {query}
+
+Documents:
+{docs_text}
+
+Please provide your response as a JSON array with the following format:
+[
+  {{"index": 0, "rank": 1, "reasoning": "Most relevant because..."}},
+  {{"index": 1, "rank": 2, "reasoning": "Second most relevant because..."}},
+  ...
+]
+
+Rank documents from 1 (most relevant) to {len(documents)} (least relevant)."""
+
+        else:  # HYBRID
+            return f"""Please analyze and rerank the following documents based on their relevance to the query.
+
+Query: {query}
+
+Documents:
+{docs_text}
+
+Please provide your response as a JSON array with the following format:
+[
+  {{"index": 0, "score": 0.95, "rank": 1, "reasoning": "Most relevant with high confidence because..."}},
+  {{"index": 1, "score": 0.75, "rank": 2, "reasoning": "Moderately relevant because..."}},
+  ...
+]
+
+Provide both a relevance score (0.0-1.0) and a rank (1-{len(documents)}) for each document."""
+    
+    def _parse_rerank_response(self, response: str, documents: List[Dict]) -> List[Dict]:
+        """Parse LLM rerank response with robust error handling"""
+        
+        try:
+            # Try to extract JSON from response
+            json_start = response.find('[')
+            json_end = response.rfind(']') + 1
+            
+            if json_start == -1 or json_end == 0:
+                logger.warning("No JSON array found in response")
+                return []
+            
+            json_str = response[json_start:json_end]
+            parsed_data = json.loads(json_str)
+            
+            if not isinstance(parsed_data, list):
+                logger.warning("Response is not a JSON array")
+                return []
+            
+            # Apply reranking based on parsed data
+            reranked_docs = []
+            for item in parsed_data:
+                if isinstance(item, dict) and 'index' in item:
+                    doc_index = item.get('index')
+                    if 0 <= doc_index < len(documents):
+                        doc = documents[doc_index].copy()
+                        
+                        # Add rerank metadata
+                        doc['rerank_score'] = item.get('score', 0.0)
+                        doc['rerank_rank'] = item.get('rank', doc_index + 1)
+                        doc['rerank_reasoning'] = item.get('reasoning', '')
+                        doc['rerank_confidence'] = min(item.get('score', 0.0), 1.0)
+                        
+                        reranked_docs.append(doc)
+            
+            # Sort by rank or score
+            if self.config.strategy == RerankStrategy.RELEVANCE_RANKING:
+                reranked_docs.sort(key=lambda x: x.get('rerank_rank', float('inf')))
+            else:
+                reranked_docs.sort(key=lambda x: x.get('rerank_score', 0.0), reverse=True)
+            
+            return reranked_docs
+            
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse JSON response: {e}")
+            return []
+        except Exception as e:
+            logger.warning(f"Failed to parse rerank response: {e}")
+            return []
+    
+    def _get_cache_key(self, query: str, documents: List[Dict]) -> str:
+        """Generate cache key for rerank results"""
+        import hashlib
+        
+        # Create a hash of query and document contents
+        content = query + "".join([doc.get('content', '')[:100] for doc in documents])
+        return hashlib.md5(content.encode()).hexdigest()
+
+
+# Convenience function for creating a robust reranker
+def create_robust_llm_reranker(
+    llm_func,
+    max_retries: int = 3,
+    retry_delay: float = 1.0,
+    max_concurrent: int = 3,
+    batch_size: int = 5,
+    timeout: float = 30.0,
+    enable_cache: bool = True,
+    strategy: str = "semantic_scoring"
+) -> RobustLLMReranker:
+    """Create a robust LLM reranker with the specified configuration"""
+    
+    config = RerankConfig(
+        max_retries=max_retries,
+        retry_delay=retry_delay,
+        max_concurrent=max_concurrent,
+        batch_size=batch_size,
+        timeout=timeout,
+        enable_cache=enable_cache,
+        strategy=RerankStrategy(strategy)
+    )
+    
+    return RobustLLMReranker(llm_func, config)

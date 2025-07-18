@@ -14,59 +14,6 @@
 
 </div>
 
-## Installation
-
-### Install LightRAG Server
-
-The LightRAG Server is designed to provide Web UI and API support. The Web UI facilitates document indexing, knowledge graph exploration, and a simple RAG query interface. LightRAG Server also provide an Ollama compatible interfaces, aiming to emulate LightRAG as an Ollama chat model. This allows AI chat bot, such as Open WebUI, to access LightRAG easily.
-
-* Install from PyPI
-
-```bash
-pip install "lightrag-hku[api]"
-cp env.example .env
-lightrag-server
-```
-
-* Installation from Source
-
-```bash
-git clone https://github.com/HKUDS/LightRAG.git
-cd LightRAG
-# create a Python virtual enviroment if neccesary
-# Install in editable mode with API support
-pip install -e ".[api]"
-cp env.example .env
-lightrag-server
-```
-
-* Launching the LightRAG Server with Docker Compose
-
-```
-git clone https://github.com/HKUDS/LightRAG.git
-cd LightRAG
-cp env.example .env
-# modify LLM and Embedding settings in .env
-docker compose up
-```
-
-> Historical versions of LightRAG docker images can be found here: [LightRAG Docker Images]( https://github.com/HKUDS/LightRAG/pkgs/container/lightrag)
-
-### Install  LightRAG Core
-
-* Install from source (Recommend)
-
-```bash
-cd LightRAG
-pip install -e .
-```
-
-* Install from PyPI
-
-```bash
-pip install lightrag-hku
-```
-
 ## Quick Start
 
 ### LLM and Technology Stack Requirements for LightRAG

@@ -6,30 +6,30 @@ LightRAG supports reranking functionality to improve retrieval quality by re-ord
 
 ### Environment Variables
 
-Set these variables in your `.env` file or environment for rerank model configuration:
+Set these variables in your `.env` file or environment for rerank configuration:
 
 ```bash
-# Rerank model configuration (required when enable_rerank=True in queries)
-RERANK_MODEL=BAAI/bge-reranker-v2-m3
-RERANK_BINDING_HOST=https://api.your-provider.com/v1/rerank
-RERANK_BINDING_API_KEY=your_api_key_here
+# Rerank configuration (required when enable_rerank=True in queries)
+ENABLE_RERANK=true
+# Gemini API key is used for reranking
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
 ### Programmatic Configuration
 
 ```python
 from lightrag import LightRAG, QueryParam
-from lightrag.rerank import custom_rerank, RerankModel
+from lightrag.rerank import gemini_llm_rerank, RerankModel
 
-# Method 1: Using a custom rerank function with all settings included
+# Method 1: Using Gemini LLM rerank function with all settings included
 async def my_rerank_func(query: str, documents: list, top_k: int = None, **kwargs):
-    return await custom_rerank(
+    return await gemini_llm_rerank(
         query=query,
         documents=documents,
-        model="BAAI/bge-reranker-v2-m3",
-        base_url="https://api.your-provider.com/v1/rerank",
-        api_key="your_api_key_here",
+        api_key="your_gemini_api_key_here",
+        model="gemini-2.0-flash",  # Default model
         top_k=top_k or 10,  # Handle top_k within the function
+        temperature=0.0,  # Lower temperature for more consistent scoring
         **kwargs
     )
 
@@ -54,11 +54,11 @@ result = await rag.aquery(
 
 # Method 2: Using RerankModel wrapper
 rerank_model = RerankModel(
-    rerank_func=custom_rerank,
+    rerank_func=gemini_llm_rerank,
     kwargs={
-        "model": "BAAI/bge-reranker-v2-m3",
-        "base_url": "https://api.your-provider.com/v1/rerank",
-        "api_key": "your_api_key_here",
+        "api_key": "your_gemini_api_key_here",
+        "model": "gemini-2.0-flash",
+        "temperature": 0.0,
     }
 )
 
@@ -79,50 +79,22 @@ result = await rag.aquery(
 )
 ```
 
-## Supported Providers
+## Supported Provider
 
-### 1. Custom/Generic API (Recommended)
+### Gemini LLM Reranking
 
-For Jina/Cohere compatible APIs:
-
-```python
-from lightrag.rerank import custom_rerank
-
-# Your custom API endpoint
-result = await custom_rerank(
-    query="your query",
-    documents=documents,
-    model="BAAI/bge-reranker-v2-m3",
-    base_url="https://api.your-provider.com/v1/rerank",
-    api_key="your_api_key_here",
-    top_k=10
-)
-```
-
-### 2. Jina AI
+LightRAG now exclusively uses Gemini LLM for reranking:
 
 ```python
-from lightrag.rerank import jina_rerank
+from lightrag.rerank import gemini_llm_rerank
 
-result = await jina_rerank(
+# Using Gemini LLM for reranking
+result = await gemini_llm_rerank(
     query="your query",
     documents=documents,
-    model="BAAI/bge-reranker-v2-m3",
-    api_key="your_jina_api_key",
-    top_k=10
-)
-```
-
-### 3. Cohere
-
-```python
-from lightrag.rerank import cohere_rerank
-
-result = await cohere_rerank(
-    query="your query",
-    documents=documents,
-    model="rerank-english-v2.0",
-    api_key="your_cohere_api_key",
+    api_key="your_gemini_api_key",
+    model="gemini-2.0-flash",  # Default model
+    temperature=0.0,  # Lower temperature for more consistent scoring
     top_k=10
 )
 ```
@@ -150,17 +122,18 @@ Reranking is automatically applied at these key retrieval stages:
 ```python
 import asyncio
 from lightrag import LightRAG, QueryParam
-from lightrag.llm.openai import gpt_4o_mini_complete, openai_embedding
+from lightrag.llm.gemini import gemini_complete, gemini_embedding
 from lightrag.kg.shared_storage import initialize_pipeline_status
-from lightrag.rerank import jina_rerank
+from lightrag.rerank import gemini_llm_rerank
 
 async def my_rerank_func(query: str, documents: list, top_k: int = None, **kwargs):
-    """Custom rerank function with all settings included"""
-    return await jina_rerank(
+    """Gemini LLM rerank function with all settings included"""
+    return await gemini_llm_rerank(
         query=query,
         documents=documents,
-        model="BAAI/bge-reranker-v2-m3",
-        api_key="your_jina_api_key_here",
+        api_key="your_gemini_api_key_here",
+        model="gemini-2.0-flash",
+        temperature=0.0,
         top_k=top_k or 10,  # Default top_k if not provided
         **kwargs
     )
@@ -169,8 +142,8 @@ async def main():
     # Initialize with rerank enabled
     rag = LightRAG(
         working_dir="./rag_storage",
-        llm_model_func=gpt_4o_mini_complete,
-        embedding_func=openai_embedding,
+        llm_model_func=gemini_complete,
+        embedding_func=gemini_embedding,
         rerank_model_func=my_rerank_func,
     )
 
@@ -197,7 +170,7 @@ asyncio.run(main())
 ### Direct Rerank Usage
 
 ```python
-from lightrag.rerank import custom_rerank
+from lightrag.rerank import gemini_llm_rerank
 
 async def test_rerank():
     documents = [
@@ -206,12 +179,12 @@ async def test_rerank():
         {"content": "Text about topic C"},
     ]
 
-    reranked = await custom_rerank(
+    reranked = await gemini_llm_rerank(
         query="Tell me about topic A",
         documents=documents,
-        model="BAAI/bge-reranker-v2-m3",
-        base_url="https://api.your-provider.com/v1/rerank",
-        api_key="your_api_key_here",
+        api_key="your_gemini_api_key_here",
+        model="gemini-2.0-flash",
+        temperature=0.0,
         top_k=2
     )
 
@@ -256,26 +229,13 @@ The rerank integration includes automatic fallback:
 # Errors are logged for debugging
 ```
 
-## API Compatibility
+## Gemini LLM Reranking
 
-The generic rerank API expects this response format:
+The Gemini LLM reranking function uses a prompt-based approach to score documents based on their relevance to the query. The function:
 
-```json
-{
-  "results": [
-    {
-      "index": 0,
-      "relevance_score": 0.95
-    },
-    {
-      "index": 2,
-      "relevance_score": 0.87
-    }
-  ]
-}
-```
+1. Sends a prompt to Gemini asking it to rate each document's relevance to the query on a scale of 0-10
+2. Parses the scores from Gemini's response
+3. Sorts documents by their relevance scores
+4. Returns the top-k most relevant documents
 
-This is compatible with:
-- Jina AI Rerank API
-- Cohere Rerank API
-- Custom APIs following the same format
+This approach leverages Gemini's understanding of language and context to provide high-quality reranking without requiring additional external APIs.

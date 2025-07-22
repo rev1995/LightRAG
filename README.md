@@ -146,16 +146,16 @@ A full list of LightRAG init parameters:
 | **chunk_overlap_token_size** | `int` | Overlap token size between two chunks when splitting documents | `100` |
 | **tokenizer** | `Tokenizer` | The function used to convert text into tokens (numbers) and back using .encode() and .decode() functions following `TokenizerInterface` protocol. If you don't specify one, it will use the default Tiktoken tokenizer. | `TiktokenTokenizer` |
 | **tiktoken_model_name** | `str` | If you're using the default Tiktoken tokenizer, this is the name of the specific Tiktoken model to use. This setting is ignored if you provide your own tokenizer. | `gpt-4o-mini` |
-| **entity_extract_max_gleaning** | `int` | Number of loops in the entity extraction process, appending history messages | `1` |
+| **entity_extract_max_gleaning** | `int` | Number of loops in the entity extraction process, appending history messages (controlled by MAX_GLEANING environment variable) | `1` |
 | **node_embedding_algorithm** | `str` | Algorithm for node embedding (currently not used) | `node2vec` |
 | **node2vec_params** | `dict` | Parameters for node embedding | `{"dimensions": 1536,"num_walks": 10,"walk_length": 40,"window_size": 2,"iterations": 3,"random_seed": 3,}` |
 | **embedding_func** | `EmbeddingFunc` | Function to generate embedding vectors from text | `openai_embed` |
 | **embedding_batch_num** | `int` | Maximum batch size for embedding processes (multiple texts sent per batch) | `32` |
-| **embedding_func_max_async** | `int` | Maximum number of concurrent asynchronous embedding processes | `16` |
+| **embedding_func_max_async** | `int` | Maximum number of concurrent asynchronous embedding processes (controlled by EMBEDDING_FUNC_MAX_ASYNC environment variable) | `8` |
 | **llm_model_func** | `callable` | Function for LLM generation | `gpt_4o_mini_complete` |
 | **llm_model_name** | `str` | LLM model name for generation | `meta-llama/Llama-3.2-1B-Instruct` |
 | **llm_model_max_token_size** | `int` | Maximum tokens send to LLM to generate entity relation summaries | `32000`（default value changed by env var MAX_TOKENS) |
-| **llm_model_max_async** | `int` | Maximum number of concurrent asynchronous LLM processes | `4`（default value changed by env var MAX_ASYNC) |
+| **llm_model_max_async** | `int` | Maximum number of concurrent asynchronous LLM processes (controlled by MAX_ASYNC environment variable) | `4` |
 | **llm_model_kwargs** | `dict` | Additional parameters for LLM generation | |
 | **vector_db_storage_cls_kwargs** | `dict` | Additional parameters for vector database, like setting the threshold for nodes and relations retrieval | cosine_better_than_threshold: 0.2（default value changed by env var COSINE_THRESHOLD) |
 | **enable_llm_cache** | `bool` | If `TRUE`, stores LLM results in cache; repeated prompts return cached responses | `TRUE` |
@@ -307,12 +307,12 @@ rag = LightRAG(
     llm_model_name='meta-llama/Llama-3.1-8B-Instruct',  # Model name from Hugging Face
     # Use Hugging Face embedding function
     embedding_func=EmbeddingFunc(
-        embedding_dim=384,
+        embedding_dim=768,  # Adjust dimension based on the model you choose
         max_token_size=5000,
         func=lambda texts: hf_embed(
             texts,
-            tokenizer=AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2"),
-            embed_model=AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+            tokenizer=AutoTokenizer.from_pretrained("BAAI/bge-base-en-v1.5"),
+            embed_model=AutoModel.from_pretrained("BAAI/bge-base-en-v1.5")
         )
     ),
 )
@@ -740,12 +740,13 @@ pip install faiss-cpu
 
 You can also install `faiss-gpu` if you have GPU support.
 
-- Here we are using `sentence-transformers` but you can also use `OpenAIEmbedding` model with `3072` dimensions.
+- You can use any embedding model that returns numpy arrays, such as `OpenAIEmbedding` model with `3072` dimensions or Gemini embeddings.
 
 ```python
 async def embedding_func(texts: list[str]) -> np.ndarray:
-    model = SentenceTransformer('all-MiniLM-L6-v2')
-    embeddings = model.encode(texts, convert_to_numpy=True)
+    # Example using OpenAI embeddings
+    from lightrag.llm.openai import openai_embedding
+    embeddings = await openai_embedding(texts)
     return embeddings
 
 # Initialize LightRAG with the LLM model function and embedding function

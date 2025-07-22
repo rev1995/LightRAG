@@ -1039,6 +1039,85 @@ def create_document_routes(
             status="scanning_started",
             message="Scanning process has been initiated in the background",
         )
+        
+    class DocumentsScanProgress(BaseModel):
+        """Response model for document scan progress
+        
+        Attributes:
+            is_scanning: Whether a scan is currently in progress
+            current_file: The file currently being processed
+            indexed_count: Number of files indexed so far
+            total_files: Total number of files to be indexed
+            progress: Progress as a float between 0 and 1
+        """
+        is_scanning: bool = Field(default=False, description="Whether a scan is currently in progress")
+        current_file: str = Field(default="", description="The file currently being processed")
+        indexed_count: int = Field(default=0, description="Number of files indexed so far")
+        total_files: int = Field(default=0, description="Total number of files to be indexed")
+        progress: float = Field(default=0.0, description="Progress as a float between 0 and 1")
+        
+        class Config:
+            json_schema_extra = {
+                "example": {
+                    "is_scanning": True,
+                    "current_file": "document.pdf",
+                    "indexed_count": 5,
+                    "total_files": 10,
+                    "progress": 0.5
+                }
+            }
+    
+    @router.get(
+        "/scan-progress", response_model=DocumentsScanProgress, dependencies=[Depends(combined_auth)]
+    )
+    async def get_documents_scan_progress():
+        """
+        Get the current progress of document scanning.
+        
+        This endpoint returns information about the current state of document scanning,
+        including whether a scan is in progress, which file is being processed,
+        and overall progress statistics.
+        
+        Returns:
+            DocumentsScanProgress: A response object containing scan progress information
+            
+        Raises:
+            HTTPException: If an error occurs while retrieving scan progress (500)
+        """
+        try:
+            from lightrag.kg.shared_storage import get_namespace_data
+            
+            # Get pipeline status to determine if scanning is in progress
+            pipeline_status = await get_namespace_data("pipeline_status")
+            
+            # Determine if scanning is in progress based on job_name and busy status
+            is_scanning = False
+            current_file = ""
+            indexed_count = 0
+            total_files = 0
+            progress = 0.0
+            
+            if pipeline_status.get("busy", False):
+                job_name = pipeline_status.get("job_name", "")
+                if "scan" in job_name.lower() or "index" in job_name.lower():
+                    is_scanning = True
+                    current_file = pipeline_status.get("latest_message", "").split(": ")[-1] if ": " in pipeline_status.get("latest_message", "") else ""
+                    indexed_count = pipeline_status.get("cur_batch", 0)
+                    total_files = pipeline_status.get("docs", 0)
+                    progress = indexed_count / total_files if total_files > 0 else 0.0
+            
+            return DocumentsScanProgress(
+                is_scanning=is_scanning,
+                current_file=current_file,
+                indexed_count=indexed_count,
+                total_files=total_files,
+                progress=progress
+            )
+            
+        except Exception as e:
+            logger.error(f"Error getting document scan progress: {str(e)}")
+            logger.error(traceback.format_exc())
+            raise HTTPException(status_code=500, detail=str(e))
 
     @router.post(
         "/upload", response_model=InsertResponse, dependencies=[Depends(combined_auth)]

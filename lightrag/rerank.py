@@ -303,6 +303,120 @@ async def custom_rerank(
     )
 
 
+async def gemini_llm_rerank(
+    query: str,
+    documents: List[Dict[str, Any]],
+    top_k: Optional[int] = None,
+    api_key: Optional[str] = None,
+    model: str = "gemini-2.0-flash",
+    temperature: float = 0.1,
+    **kwargs,
+) -> List[Dict[str, Any]]:
+    """
+    Rerank documents using Gemini LLM.
+    
+    This function uses Gemini's reasoning capabilities to evaluate the relevance
+    of each document to the query and assign a relevance score.
+    
+    Args:
+        query: The search query
+        documents: List of documents to rerank
+        top_k: Number of top results to return
+        api_key: Gemini API key
+        model: Gemini model name
+        temperature: Temperature for generation
+        **kwargs: Additional parameters
+        
+    Returns:
+        List of reranked documents with relevance scores
+    """
+    if not documents:
+        return documents
+        
+    # Use provided API key or get from environment
+    if api_key is None:
+        api_key = os.getenv("GEMINI_API_KEY")
+        
+    if not api_key:
+        logger.warning("No API key provided for Gemini LLM reranking")
+        return documents
+        
+    try:
+        from google import genai
+        from google.genai import types
+        
+        # Initialize Gemini client
+        client = genai.Client(api_key=api_key)
+        
+        # Prepare documents for reranking
+        doc_texts = []
+        for doc in documents:
+            if isinstance(doc, dict):
+                # Use 'content' field if available, otherwise use 'text' or convert to string
+                text = doc.get("content") or doc.get("text") or str(doc)
+            else:
+                text = str(doc)
+            doc_texts.append(text)
+            
+        # Create prompt for reranking
+        prompt = f"""You are a document reranking system. Your task is to evaluate the relevance of each document to the given query and assign a relevance score from 0 to 10, where 10 is most relevant.
+
+Query: {query}
+
+Documents to rank:
+"""
+        
+        for i, text in enumerate(doc_texts):
+            prompt += f"\nDocument {i+1}:\n{text}\n"
+            
+        prompt += "\nFor each document, provide a relevance score from 0 to 10 based on how well it answers the query. Return your response in the following format:\nDocument 1: [score]\nDocument 2: [score]\n..."
+        
+        # Call Gemini model
+        response = client.models.generate_content(
+            model=model,
+            contents=[prompt],
+            config=types.GenerateContentConfig(
+                temperature=temperature,
+            ),
+        )
+        
+        response_text = response.text
+        
+        # Parse scores from response
+        scores = []
+        for i, _ in enumerate(doc_texts):
+            pattern = rf"Document {i+1}:\s*([0-9]{{1,2}}(?:\.[0-9]+)?)"
+            import re
+            match = re.search(pattern, response_text)
+            if match:
+                score = float(match.group(1))
+                scores.append((i, score))
+            else:
+                # Default score if parsing fails
+                scores.append((i, 5.0))
+        
+        # Sort by score in descending order
+        scores.sort(key=lambda x: x[1], reverse=True)
+        
+        # Limit to top_k if specified
+        if top_k is not None:
+            scores = scores[:top_k]
+        
+        # Create reranked document list
+        reranked_docs = []
+        for idx, score in scores:
+            if 0 <= idx < len(documents):
+                reranked_doc = documents[idx].copy() if isinstance(documents[idx], dict) else {"content": documents[idx]}
+                reranked_doc["rerank_score"] = score
+                reranked_docs.append(reranked_doc)
+        
+        return reranked_docs
+        
+    except Exception as e:
+        logger.error(f"Error during Gemini LLM reranking: {e}")
+        return documents
+
+
 if __name__ == "__main__":
     import asyncio
 
@@ -316,9 +430,16 @@ if __name__ == "__main__":
 
         query = "What is the capital of France?"
 
-        result = await jina_rerank(
+        # Example with Jina rerank
+        result_jina = await jina_rerank(
             query=query, documents=docs, top_k=2, api_key="your-api-key-here"
         )
-        print(result)
+        print("Jina rerank result:", result_jina)
+        
+        # Example with Gemini LLM rerank
+        result_gemini = await gemini_llm_rerank(
+            query=query, documents=docs, top_k=2, api_key="your-gemini-api-key-here"
+        )
+        print("Gemini LLM rerank result:", result_gemini)
 
     asyncio.run(main())

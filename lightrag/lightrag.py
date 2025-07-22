@@ -1762,6 +1762,25 @@ class LightRAG:
         # Return the dictionary containing statuses only for the found document IDs
         return found_statuses
 
+    async def list_doc_statuses(self) -> list[DocProcessingStatus]:
+        """List all document statuses in the system
+        
+        Returns:
+            list[DocProcessingStatus]: List of all document statuses
+        """
+        # Get documents from all possible statuses
+        pending_docs = await self.get_docs_by_status(DocStatus.PENDING)
+        processing_docs = await self.get_docs_by_status(DocStatus.PROCESSING)
+        processed_docs = await self.get_docs_by_status(DocStatus.PROCESSED)
+        failed_docs = await self.get_docs_by_status(DocStatus.FAILED)
+        
+        # Combine all documents into a single list
+        all_docs = []
+        for docs in [pending_docs, processing_docs, processed_docs, failed_docs]:
+            all_docs.extend(list(docs.values()))
+            
+        return all_docs
+        
     async def adelete_by_doc_id(self, doc_id: str) -> DeletionResult:
         """Delete a document and all its related data, including chunks, graph elements, and cached entries.
 

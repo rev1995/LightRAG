@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+google-genai
+python-dotenv
+sentence-transformers
+requests
+sentencepiece
+python-json-logger
+pipmaster

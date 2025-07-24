@@ -1578,6 +1578,39 @@ class LightRAG:
             raise ValueError(f"Unknown mode {param.mode}")
         await self._query_done()
         return response
+        
+    async def query_stream(
+        self,
+        query: str,
+        param: QueryParam = QueryParam(),
+        system_prompt: str | None = None,
+    ) -> AsyncIterator[str]:
+        """
+        Perform a streaming query that returns chunks of the response as they are generated.
+
+        Args:
+            query (str): The query to be executed.
+            param (QueryParam): Configuration parameters for query execution.
+                If param.model_func is provided, it will be used instead of the global model.
+            system_prompt (Optional[str]): Custom prompts for fine-tuned control over the system's behavior. 
+                Defaults to None, which uses PROMPTS["rag_response"].
+
+        Returns:
+            AsyncIterator[str]: An async iterator that yields chunks of the response as they are generated.
+        """
+        # Force streaming mode
+        param.stream = True
+        
+        # Call aquery with streaming enabled
+        response = await self.aquery(query, param, system_prompt)
+        
+        # If response is already an async iterator, return it directly
+        if hasattr(response, "__aiter__"):
+            async for chunk in response:
+                yield chunk
+        else:
+            # If response is a string (shouldn't happen with stream=True), yield it as a single chunk
+            yield response
 
     # TODO: Deprecated, use user_prompt in QueryParam instead
     def query_with_separate_keyword_extraction(

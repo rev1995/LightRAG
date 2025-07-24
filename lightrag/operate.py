@@ -2211,8 +2211,8 @@ async def _build_query_context(
                 text_units_context.append(
                     {
                         "id": i + 1,
-                        "content": chunk["content"],
-                        "file_path": chunk.get("file_path", "unknown_source"),
+                        "content": chunk["content"] if isinstance(chunk, dict) else chunk[0] if isinstance(chunk, tuple) else str(chunk),
+                        "file_path": chunk.get("file_path", "unknown_source") if isinstance(chunk, dict) else "unknown_source",
                     }
                 )
 
@@ -3244,7 +3244,7 @@ async def process_chunks_unified(
         original_count = len(unique_chunks)
         unique_chunks = truncate_list_by_token_size(
             unique_chunks,
-            key=lambda x: x.get("content", ""),
+            key=lambda x: str(x.get("content", "")) if isinstance(x, dict) else str(x[0]) if isinstance(x, tuple) else str(x),
             max_token_size=chunk_token_limit,
             tokenizer=tokenizer,
         )

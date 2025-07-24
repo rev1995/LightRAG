@@ -182,7 +182,7 @@ class RAGConfig:
     
     # Embedding settings
     embedding_model: str = field(default_factory=lambda: os.getenv("EMBEDDING_MODEL", "models/embedding-001"))
-    embedding_dim: int = field(default_factory=lambda: int(os.getenv("EMBEDDING_DIM", "768")))
+    embedding_dim: int = field(default_factory=lambda: int(os.getenv("EMBEDDING_DIM", "3072")))
     embedding_max_token_size: int = field(default_factory=lambda: int(os.getenv("EMBEDDING_MAX_TOKEN_SIZE", "8192")))
     
     # Reranker settings
@@ -385,8 +385,8 @@ class ProductionRAGPipeline:
                     # Using the gemini-embedding-001 model
                     result = client.models.embed_content(
                         model=self.config.embedding_model,
-                        text=text,
-                        task_type="RETRIEVAL_DOCUMENT",  # Optimize for document retrieval
+                        contents=text,
+                        config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT"),  # Optimize for document retrieval
                     )
                     
                     # Extract the embedding values from the response
@@ -491,7 +491,7 @@ class ProductionRAGPipeline:
         
         # Execute query with token tracking
         with self.token_tracker:
-            response = await self.rag.query(query_text, param=param)
+            response = await self.rag.aquery(query_text, param=param)
         
         # Prepare response
         result = {
@@ -609,10 +609,12 @@ class ProductionRAGPipeline:
         if not self.initialized:
             await self.initialize()
         
-        status = await self.rag.get_doc_status(doc_id)
+        status = await self.rag.doc_status.get_by_id(doc_id)
         if status:
             # Convert DocStatus to dict and format datetime
             status_dict = asdict(status)
+            # Add the document ID to the status dict
+            status_dict["id"] = doc_id
             if status_dict.get("created_at"):
                 status_dict["created_at"] = status_dict["created_at"].isoformat()
             if status_dict.get("updated_at"):
@@ -633,13 +635,30 @@ class ProductionRAGPipeline:
         
         # Convert DocStatus objects to dicts and format datetime if needed
         result = []
-        for status in statuses:
-            status_dict = asdict(status)
-            if status_dict.get("created_at") and not isinstance(status_dict["created_at"], str):
-                status_dict["created_at"] = status_dict["created_at"].isoformat()
-            if status_dict.get("updated_at") and not isinstance(status_dict["updated_at"], str):
-                status_dict["updated_at"] = status_dict["updated_at"].isoformat()
-            result.append(status_dict)
+        # Check if statuses is a list or a dictionary
+        if isinstance(statuses, list):
+            # If it's a list, we need to generate IDs
+            for i, status in enumerate(statuses):
+                status_dict = asdict(status)
+                # Use file_path as ID if available, otherwise use index
+                doc_id = status_dict.get("file_path", f"doc_{i}")
+                status_dict["id"] = doc_id
+                if status_dict.get("created_at") and not isinstance(status_dict["created_at"], str):
+                    status_dict["created_at"] = status_dict["created_at"].isoformat()
+                if status_dict.get("updated_at") and not isinstance(status_dict["updated_at"], str):
+                    status_dict["updated_at"] = status_dict["updated_at"].isoformat()
+                result.append(status_dict)
+        else:
+            # If it's a dictionary, use the existing keys as IDs
+            for doc_id, status in statuses.items():
+                status_dict = asdict(status)
+                # Add the document ID to the status dict
+                status_dict["id"] = doc_id
+                if status_dict.get("created_at") and not isinstance(status_dict["created_at"], str):
+                    status_dict["created_at"] = status_dict["created_at"].isoformat()
+                if status_dict.get("updated_at") and not isinstance(status_dict["updated_at"], str):
+                    status_dict["updated_at"] = status_dict["updated_at"].isoformat()
+                result.append(status_dict)
         
         return result
     

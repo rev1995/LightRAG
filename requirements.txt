@@ -9,3 +9,4 @@ requests
 sentencepiece
 python-json-logger
 pipmaster
+aiohttp

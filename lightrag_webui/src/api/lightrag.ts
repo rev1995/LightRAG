@@ -367,18 +367,31 @@ export const queryTextStream = async (
       // Decode the chunk and add to buffer
       buffer += decoder.decode(value, { stream: true }); // stream: true handles multi-byte chars split across chunks
 
-      // Process complete lines (NDJSON)
+      // Process complete lines (SSE format)
       const lines = buffer.split('\n');
       buffer = lines.pop() || ''; // Keep potentially incomplete line in buffer
 
       for (const line of lines) {
         if (line.trim()) {
           try {
-            const parsed = JSON.parse(line);
-            if (parsed.response) {
-              onChunk(parsed.response);
-            } else if (parsed.error && onError) {
-              onError(parsed.error);
+            // Check if line starts with "data:" prefix (SSE format)
+            if (line.startsWith('data:')) {
+              // Extract the JSON part after "data:" prefix
+              const jsonStr = line.substring(5).trim();
+              const parsed = JSON.parse(jsonStr);
+              if (parsed.chunk) {
+                onChunk(parsed.chunk);
+              } else if (parsed.error && onError) {
+                onError(parsed.error);
+              }
+            } else {
+              // Fallback: try to parse the whole line as JSON
+              const parsed = JSON.parse(line);
+              if (parsed.response) {
+                onChunk(parsed.response);
+              } else if (parsed.error && onError) {
+                onError(parsed.error);
+              }
             }
           } catch (error) {
             console.error('Error parsing stream chunk:', line, error);
@@ -391,11 +404,24 @@ export const queryTextStream = async (
     // Process any remaining data in the buffer after the stream ends
     if (buffer.trim()) {
       try {
-        const parsed = JSON.parse(buffer);
-        if (parsed.response) {
-          onChunk(parsed.response);
-        } else if (parsed.error && onError) {
-          onError(parsed.error);
+        // Check if buffer starts with "data:" prefix (SSE format)
+        if (buffer.startsWith('data:')) {
+          // Extract the JSON part after "data:" prefix
+          const jsonStr = buffer.substring(5).trim();
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.chunk) {
+            onChunk(parsed.chunk);
+          } else if (parsed.error && onError) {
+            onError(parsed.error);
+          }
+        } else {
+          // Fallback: try to parse the whole buffer as JSON
+          const parsed = JSON.parse(buffer);
+          if (parsed.response) {
+            onChunk(parsed.response);
+          } else if (parsed.error && onError) {
+            onError(parsed.error);
+          }
         }
       } catch (error) {
         console.error('Error parsing final chunk:', buffer, error);

@@ -39,7 +39,10 @@ from dotenv import load_dotenv
 # Import the production pipeline
 from production_rag_pipeline import ProductionRAGPipeline, RAGConfig
 from lightrag.utils import logger, setup_logger
-from lightrag.base import DocProcessingStatus
+
+# --- CHANGE: Import DocStatus and get_namespace_data for accurate status reporting
+from lightrag.base import DocStatus
+from lightrag.kg.shared_storage import get_namespace_data
 
 # Load environment variables
 load_dotenv()
@@ -120,11 +123,41 @@ class ClearCacheResponse(BaseModel):
     status: str
     cleared_modes: List[str]
 
+# --- CHANGE: Updated PipelineStatusResponse model to include detailed counts ---
+class PipelineStatusResponse(BaseModel):
+    """Response model for pipeline status"""
+    autoscanned: bool
+    busy: bool
+    job_name: str
+    docs: int
+    completed: int
+    processing: int
+    pending: int
+    failed: int
+    batchs: int
+    cur_batch: int
+    request_pending: bool
+    latest_message: str
+    job_start: Optional[str] = None
+    history_messages: Optional[List[str]] = None
+    update_status: Optional[Dict[str, Any]] = None
+
 class HealthResponse(BaseModel):
     """Response model for health check"""
     status: str
-    version: str
-    timestamp: str
+    version: Optional[str] = None
+    timestamp: Optional[str] = None
+    working_directory: Optional[str] = None
+    input_directory: Optional[str] = None
+    configuration: Optional[Dict[str, Any]] = None
+    update_status: Optional[Dict[str, Any]] = None
+    core_version: Optional[str] = None
+    api_version: Optional[str] = None
+    auth_mode: Optional[str] = None
+    pipeline_busy: Optional[bool] = None
+    keyed_locks: Optional[Dict[str, Any]] = None
+    webui_title: Optional[str] = None
+    webui_description: Optional[str] = None
 
 # --- Authentication ---
 
@@ -293,9 +326,33 @@ async def auth_status(user: User = Depends(get_current_user)):
 @app.get("/health", response_model=HealthResponse)
 async def health_check():
     return {
-        "status": "ok",
+        "status": "healthy",
         "version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
+        "working_directory": os.environ.get("WORKING_DIR", "/tmp/lightrag"),
+        "input_directory": os.environ.get("INPUT_DIR", "/tmp/lightrag/input"),
+        "configuration": {
+            "llm_binding": "gemini",
+            "llm_binding_host": "api.google.com",
+            "llm_model": os.environ.get("GEMINI_MODEL", "gemini-1.5-flash"),
+            "embedding_binding": "gemini",
+            "embedding_binding_host": "api.google.com",
+            "embedding_model": os.environ.get("EMBEDDING_MODEL", "embedding-001"),
+            "max_tokens": int(os.environ.get("GEMINI_MAX_OUTPUT_TOKENS", "2048")),
+            "kv_storage": os.environ.get("KV_STORAGE", "json"),
+            "doc_status_storage": os.environ.get("DOC_STATUS_STORAGE", "json"),
+            "graph_storage": os.environ.get("GRAPH_STORAGE", "networkx"),
+            "vector_storage": os.environ.get("VECTOR_STORAGE", "nanovectordb"),
+            "enable_rerank": os.environ.get("ENABLE_RERANK", "true").lower() == "true",
+            "rerank_model": os.environ.get("RERANKER_MODEL", "gemini"),
+            "rerank_binding_host": "api.google.com"
+        },
+        "core_version": "1.0.0",
+        "api_version": "1.0.0",
+        "auth_mode": "enabled" if users_db else "disabled",
+        "pipeline_busy": False,
+        "webui_title": os.environ.get("WEBUI_TITLE", "LightRAG WebUI"),
+        "webui_description": os.environ.get("WEBUI_DESCRIPTION", "Interactive RAG System")
     }
 
 @app.post("/query", response_model=QueryResponse, dependencies=[Depends(api_key_auth)])
@@ -372,6 +429,48 @@ async def insert_file(file: UploadFile = File(...), doc_id: Optional[str] = None
         return result
     except Exception as e:
         logger.error(f"File insertion error: {str(e)}\n{traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- CHANGE: Route order fixed and logic updated. ---
+# This endpoint is now placed BEFORE the dynamic "/documents/{doc_id}" endpoint.
+@app.get("/documents/pipeline_status", response_model=PipelineStatusResponse, dependencies=[])
+async def get_pipeline_status():
+    try:
+        if not pipeline:
+            raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
+        
+        # Get actual pipeline status counts from the backend
+        processing_status = await pipeline.rag.get_processing_status()
+        
+        # Map the keys from `DocStatus` enum to the response fields
+        completed_count = processing_status.get(DocStatus.PROCESSED.value, 0)
+        processing_count = processing_status.get(DocStatus.PROCESSING.value, 0)
+        pending_count = processing_status.get(DocStatus.PENDING.value, 0)
+        failed_count = processing_status.get(DocStatus.FAILED.value, 0)
+        total_docs = sum(processing_status.values())
+
+        # Get real-time job status from the shared state
+        shared_pipeline_status = await get_namespace_data("pipeline_status")
+
+        # Format the response with the correct data
+        return {
+            "autoscanned": True,
+            "busy": shared_pipeline_status.get("busy", False),
+            "job_name": shared_pipeline_status.get("job_name", ""),
+            "docs": total_docs,
+            "completed": completed_count,
+            "processing": processing_count,
+            "pending": pending_count,
+            "failed": failed_count,
+            "batchs": shared_pipeline_status.get("batchs", 0),
+            "cur_batch": shared_pipeline_status.get("cur_batch", 0),
+            "request_pending": shared_pipeline_status.get("request_pending", False),
+            "latest_message": shared_pipeline_status.get("latest_message", "Pipeline ready"),
+            "job_start": shared_pipeline_status.get("job_start"),
+            "history_messages": shared_pipeline_status.get("history_messages", []),
+        }
+    except Exception as e:
+        logger.error(f"Get pipeline status error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/documents/{doc_id}", response_model=DocumentStatusResponse, dependencies=[Depends(api_key_auth)])
@@ -464,37 +563,16 @@ async def update_relation(relation_data: Dict[str, Any] = Body(...), user: User 
         logger.error(f"Update relation error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/graph/label/list", dependencies=[Depends(api_key_auth)])
+@app.get("/graph/label/list", dependencies=[Depends(api_key_auth)], operation_id="get_graph_labels_v1")
 async def get_graph_labels(user: User = Depends(get_current_user)):
     try:
         if not pipeline:
             raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
         # Get list of labels in the knowledge graph
-        # This is a placeholder - actual implementation would depend on your RAG pipeline
-        return {"labels": []}
+        labels = await pipeline.rag.get_graph_labels()
+        return {"labels": labels}
     except Exception as e:
         logger.error(f"Get graph labels error: {str(e)}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/documents/pipeline_status", dependencies=[Depends(api_key_auth)])
-async def get_pipeline_status(user: User = Depends(get_current_user)):
-    try:
-        if not pipeline:
-            raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
-        # Get pipeline status
-        # This is a placeholder - actual implementation would depend on your RAG pipeline
-        return {
-            "status": "ready",
-            "message": "Pipeline is ready",
-            "documents_count": 0,
-            "embeddings_count": 0,
-            "index_size": 0,
-            "cache_size": 0,
-            "model_name": "gemini-pro",
-            "embedding_model": "text-embedding-ada-002"
-        }
-    except Exception as e:
-        logger.error(f"Get pipeline status error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/documents/clear_cache", response_model=ClearCacheResponse, dependencies=[Depends(api_key_auth)])
@@ -539,33 +617,6 @@ async def get_scan_progress(user: User = Depends(get_current_user)):
         logger.error(f"Get scan progress error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/documents/pipeline_status", dependencies=[Depends(api_key_auth)])
-async def get_pipeline_status(user: User = Depends(get_current_user)):
-    try:
-        # Return a mock pipeline status
-        return {
-            "autoscanned": True,
-            "busy": False,
-            "job_name": "",
-            "docs": 0,
-            "batchs": 0,
-            "cur_batch": 0,
-            "request_pending": False,
-            "latest_message": "Pipeline ready"
-        }
-    except Exception as e:
-        logger.error(f"Get pipeline status error: {str(e)}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/graph/label/list", dependencies=[Depends(api_key_auth)])
-async def get_graph_labels(user: User = Depends(get_current_user)):
-    try:
-        # Return a mock list of graph labels
-        return ["Person", "Organization", "Location", "Event"]
-    except Exception as e:
-        logger.error(f"Get graph labels error: {str(e)}\n{traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=str(e))
-
 @app.delete("/documents", dependencies=[Depends(api_key_auth)])
 async def clear_documents(user: User = Depends(get_current_user)):
     try:
@@ -597,12 +648,12 @@ print(f"WebUI directory path: {webui_dir}, exists: {webui_dir.exists()}")
 
 if webui_dir.exists():
     app.mount("/webui", StaticFiles(directory=str(webui_dir), html=True), name="webui")
-    @app.get("/webui")
+    @app.get("/webui", include_in_schema=False)
     async def redirect_to_webui():
         return RedirectResponse(url="/webui/index.html")
 
 # Optional: Redirect root to WebUI
-@app.get("/")
+@app.get("/", include_in_schema=False)
 async def root_redirect():
     return RedirectResponse(url="/webui/index.html")
 
@@ -635,3 +686,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    

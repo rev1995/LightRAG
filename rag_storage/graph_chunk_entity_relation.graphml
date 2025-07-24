@@ -1,0 +1,1897 @@
+<?xml version='1.0' encoding='utf-8'?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="d11" for="edge" attr.name="created_at" attr.type="long" />
+  <key id="d10" for="edge" attr.name="file_path" attr.type="string" />
+  <key id="d9" for="edge" attr.name="source_id" attr.type="string" />
+  <key id="d8" for="edge" attr.name="keywords" attr.type="string" />
+  <key id="d7" for="edge" attr.name="description" attr.type="string" />
+  <key id="d6" for="edge" attr.name="weight" attr.type="double" />
+  <key id="d5" for="node" attr.name="created_at" attr.type="long" />
+  <key id="d4" for="node" attr.name="file_path" attr.type="string" />
+  <key id="d3" for="node" attr.name="source_id" attr.type="string" />
+  <key id="d2" for="node" attr.name="description" attr.type="string" />
+  <key id="d1" for="node" attr.name="entity_type" attr.type="string" />
+  <key id="d0" for="node" attr.name="entity_id" attr.type="string" />
+  <graph edgedefault="undirected">
+    <node id="24">
+      <data key="d0">24</data>
+      <data key="d1">category</data>
+      <data key="d2">24 is a 2016 Indian Tamil-language science fiction action film.&lt;SEP&gt;24 is the title of the film, centered around the theme of time control.&lt;SEP&gt;24 is the title of the film, which deals with time travel.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="Vikram Kumar">
+      <data key="d0">Vikram Kumar</data>
+      <data key="d1">person</data>
+      <data key="d2">Vikram Kumar is a director who changed the screenplay of the film with new dimensions in narration.&lt;SEP&gt;Vikram Kumar is the director of the film.&lt;SEP&gt;Vikram Kumar is the writer and director of the film 24.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="Suriya">
+      <data key="d0">Suriya</data>
+      <data key="d1">person</data>
+      <data key="d2">Suriya is an actor who played triple roles in the film 24 and whose production company announced the project.&lt;SEP&gt;Suriya is an actor who plays a triple role in the film as Manikandan 'Mani', Athreya, and Dr. Sethuraman.&lt;SEP&gt;Suriya is the producer of the film 24 and also stars in triple roles.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="Samantha Ruth Prabhu">
+      <data key="d0">Samantha Ruth Prabhu</data>
+      <data key="d1">person</data>
+      <data key="d2">Samantha Ruth Prabhu is an actress who stars in the film 24.&lt;SEP&gt;Samantha Ruth Prabhu plays Sathyabhama aka Sathya, Mani's love interest.&lt;SEP&gt;Samantha Ruth Prabhu was finalized to play a leading female role in the film.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="Nithya Menen">
+      <data key="d0">Nithya Menen</data>
+      <data key="d1">person</data>
+      <data key="d2">Nithya Menen is an actress who stars in the film 24.&lt;SEP&gt;Nithya Menen plays Priya Sethuraman, Sethuraman's wife and Mani's biological mother.&lt;SEP&gt;Nithya Menen was roped in to play another leading character in the film.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="Tirru">
+      <data key="d0">Tirru</data>
+      <data key="d1">person</data>
+      <data key="d2">Tirru is the cinematographer for the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="Prawin Pudi">
+      <data key="d0">Prawin Pudi</data>
+      <data key="d1">person</data>
+      <data key="d2">Prawin Pudi is the editor for the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="A. R. Rahman">
+      <data key="d0">A. R. Rahman</data>
+      <data key="d1">person</data>
+      <data key="d2">A. R. Rahman composed the songs and score for the film 24.&lt;SEP&gt;A. R. Rahman is the composer of the film's soundtrack and score.&lt;SEP&gt;A. R. Rahman was announced as the film soundtrack and score composer.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336315</data>
+    </node>
+    <node id="Qutub-E-Kripa">
+      <data key="d0">Qutub-E-Kripa</data>
+      <data key="d1">person</data>
+      <data key="d2">Qutub-E-Kripa contributed to the score of the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="2D Entertainment">
+      <data key="d0">2D Entertainment</data>
+      <data key="d1">organization</data>
+      <data key="d2">2D Entertainment is Suriya's production company that announced the film project.&lt;SEP&gt;2D Entertainment is Suriya's production company, which announced the project in August 2014.&lt;SEP&gt;2D Entertainment is the production company for the film 24, owned by Suriya.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="Eros International">
+      <data key="d0">Eros International</data>
+      <data key="d1">organization</data>
+      <data key="d2">Eros International is a distributor of the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="Studio Green">
+      <data key="d0">Studio Green</data>
+      <data key="d1">organization</data>
+      <data key="d2">Studio Green is a distributor of the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="India">
+      <data key="d0">India</data>
+      <data key="d1">geo</data>
+      <data key="d2">India is the country of origin for the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="Tamil">
+      <data key="d0">Tamil</data>
+      <data key="d1">category</data>
+      <data key="d2">Tamil is the language of the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="Mumbai">
+      <data key="d0">Mumbai</data>
+      <data key="d1">geo</data>
+      <data key="d2">Mumbai is a city in India where principal photography for the film commenced.&lt;SEP&gt;Mumbai is a location where principal photography for the film 24 commenced.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="Nasik">
+      <data key="d0">Nasik</data>
+      <data key="d1">geo</data>
+      <data key="d2">Nasik is a location where principal photography for the film 24 continued.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336320</data>
+    </node>
+    <node id="Goregaon">
+      <data key="d0">Goregaon</data>
+      <data key="d1">geo</data>
+      <data key="d2">Goregaon is a location where principal photography for the film 24 continued.&lt;SEP&gt;Goregaon is a suburb of Mumbai where Filmistaan Studios is located.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Pune">
+      <data key="d0">Pune</data>
+      <data key="d1">geo</data>
+      <data key="d2">Pune is a city in India where Subrata Roy Sahara Stadium is located.&lt;SEP&gt;Pune is a location where principal photography for the film 24 continued.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Poland">
+      <data key="d0">Poland</data>
+      <data key="d1">geo</data>
+      <data key="d2">Poland is a country where a twenty-day schedule was filmed, including action scenes and songs.&lt;SEP&gt;Poland is a location where the second phase of filming for the film 24 was done.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Chennai">
+      <data key="d0">Chennai</data>
+      <data key="d1">geo</data>
+      <data key="d2">Chennai is a city in India where Adithyaram Studios is located.&lt;SEP&gt;Chennai is a city where filming commenced at AVM Studios.&lt;SEP&gt;Chennai is a location where filming for the film 24 was completed.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Vairamuthu">
+      <data key="d0">Vairamuthu</data>
+      <data key="d1">person</data>
+      <data key="d2">Vairamuthu is a lyricist who wrote lyrics for the songs in the film.&lt;SEP&gt;Vairamuthu wrote the lyrics for the film 24.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Madhan Karky">
+      <data key="d0">Madhan Karky</data>
+      <data key="d1">person</data>
+      <data key="d2">Madhan Karky is a lyricist who wrote lyrics for the songs in the film.&lt;SEP&gt;Madhan Karky wrote the lyrics for the film 24.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Sethuraman">
+      <data key="d0">Sethuraman</data>
+      <data key="d1">person</data>
+      <data key="d2">Sethuraman is a character in the film, with Nithya Menen playing his love interest.&lt;SEP&gt;Sethuraman is a scientist and watchmaker who invents a time-traveling watch in the film 24.&lt;SEP&gt;Sethuraman is a scientist, Athreya's twin brother, and Mani's biological father. He initially creates the time-traveling watch and ultimately uses it to kill Athreya and protect his family.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Priya">
+      <data key="d0">Priya</data>
+      <data key="d1">person</data>
+      <data key="d2">Priya is Sethuraman's wife and Mani's biological mother. She is initially excited about the time travel but becomes wary of its dangers and asks Sethuraman to throw the watch away.&lt;SEP&gt;Priya is Sethuraman's wife and Manikandan's mother, who is killed by Athreya.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336326</data>
+    </node>
+    <node id="Manikandan">
+      <data key="d0">Manikandan</data>
+      <data key="d1">person</data>
+      <data key="d2">Manikandan, also called Mani, is Sethuraman and Priya's son, who grows up to be a watch mechanic.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="Athreya">
+      <data key="d0">Athreya</data>
+      <data key="d1">person</data>
+      <data key="d2">Athreya is Sethuraman's twin brother and a gangster who seeks to obtain the time-traveling watch.&lt;SEP&gt;Athreya is the antagonist character in the film, portrayed as wicked and smart.&lt;SEP&gt;Athreya is the main antagonist and Sethuraman's twin brother. He is initially portrayed as vicious and murderous, seeking to control time travel for his own purposes. He is later killed by Sethuraman.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="Sathyabhama">
+      <data key="d0">Sathyabhama</data>
+      <data key="d1">person</data>
+      <data key="d2">Sathyabhama is the woman who takes care of Manikandan after Sethuraman entrusts him to her.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="Sathya">
+      <data key="d0">Sathya</data>
+      <data key="d1">person</data>
+      <data key="d2">Sathya is a girl who Mani meets and falls in love with.&lt;SEP&gt;Sathya is a young girl who interacts with Mani at the end of the film.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="Mithran">
+      <data key="d0">Mithran</data>
+      <data key="d1">person</data>
+      <data key="d2">Mithran is Athreya's trusted confidante.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="Saravanan">
+      <data key="d0">Saravanan</data>
+      <data key="d1">person</data>
+      <data key="d2">Saravanan is Mani's friend.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="24 (2016 Film)">
+      <data key="d0">24 (2016 Film)</data>
+      <data key="d1">event</data>
+      <data key="d2">A 2016 Indian Tamil-language science fiction action film directed by Vikram Kumar.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="Samantha">
+      <data key="d0">Samantha</data>
+      <data key="d1">person</data>
+      <data key="d2">An actress starring in the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336332</data>
+    </node>
+    <node id="₹70 crore">
+      <data key="d0">₹70 crore</data>
+      <data key="d1">category</data>
+      <data key="d2">The budget of the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="₹100 crore">
+      <data key="d0">₹100 crore</data>
+      <data key="d1">category</data>
+      <data key="d2">The estimated box office collection of the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="Time-Traveling Watch">
+      <data key="d0">Time-Traveling Watch</data>
+      <data key="d1">category</data>
+      <data key="d2">An invention of Sethuraman that allows time travel, and is the central object of conflict in the film.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="6 May 2016">
+      <data key="d0">6 May 2016</data>
+      <data key="d1">event</data>
+      <data key="d2">The release date of the film 24.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="64th National Film Awards">
+      <data key="d0">64th National Film Awards</data>
+      <data key="d1">event</data>
+      <data key="d2">The event where 24 won two awards.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="Critics Best Actor Award">
+      <data key="d0">Critics Best Actor Award</data>
+      <data key="d1">event</data>
+      <data key="d2">The award Suriya won at the 64th Filmfare Awards.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="64th Filmfare Awards">
+      <data key="d0">64th Filmfare Awards</data>
+      <data key="d1">event</data>
+      <data key="d2">The event where Suriya won the Critics Best Actor Award.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="Best Cinematography">
+      <data key="d0">Best Cinematography</data>
+      <data key="d1">category</data>
+      <data key="d2">One of the awards won by the film 24 at the 64th National Film Awards.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336338</data>
+    </node>
+    <node id="Best Production Design">
+      <data key="d0">Best Production Design</data>
+      <data key="d1">category</data>
+      <data key="d2">One of the awards won by the film 24 at the 64th National Film Awards.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="1990">
+      <data key="d0">1990</data>
+      <data key="d1">category</data>
+      <data key="d2">1990 is the year Mani travels back to in an attempt to warn his parents about Athreya.&lt;SEP&gt;The year in which Sethuraman completes his time-traveling watch and is attacked by Athreya.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="2016">
+      <data key="d0">2016</data>
+      <data key="d1">category</data>
+      <data key="d2">The year in which Manikandan discovers the time-traveling watch and Athreya wakes up from his coma.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="₹5 crore">
+      <data key="d0">₹5 crore</data>
+      <data key="d1">category</data>
+      <data key="d2">The reward offered for the lost watch.</data>
+      <data key="d3">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="Mani">
+      <data key="d0">Mani</data>
+      <data key="d1">person</data>
+      <data key="d2">Mani is a character in the film, with Samantha playing his love interest.&lt;SEP&gt;Mani is a watch mechanic and Sethuraman's biological son. He is the only one who can upgrade the time-traveling watch. He travels back in time to warn his parents about Athreya's plans.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="Sathyabhama aka Sathya">
+      <data key="d0">Sathyabhama aka Sathya</data>
+      <data key="d1">person</data>
+      <data key="d2">Sathyabhama, also known as Sathya, is Mani's love interest. She meets Sethuraman and Priya on a train and invites them to join her family's school.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="AVM Studios">
+      <data key="d0">AVM Studios</data>
+      <data key="d1">organization</data>
+      <data key="d2">AVM Studios is a film studio in Chennai where sets were replicated for filming.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="The Times of India">
+      <data key="d0">The Times of India</data>
+      <data key="d1">organization</data>
+      <data key="d2">The Times of India is a newspaper that interviewed Vikram Kumar about the film.&lt;SEP&gt;The Times of India is a newspaper where Vikram gave an interview about his film.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336344</data>
+    </node>
+    <node id="World Athletics Championship">
+      <data key="d0">World Athletics Championship</data>
+      <data key="d1">event</data>
+      <data key="d2">The World Athletics Championship is a global sports competition featuring top athletes in track and field.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Tamil Cinema">
+      <data key="d0">Tamil Cinema</data>
+      <data key="d1">category</data>
+      <data key="d2">Tamil Cinema is the industry in which Ileana D'Cruz was to be relaunched.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Saranya Ponvannan">
+      <data key="d0">Saranya Ponvannan</data>
+      <data key="d1">person</data>
+      <data key="d2">Saranya Ponvannan plays Sathyabhama, Mani's adoptive mother.&lt;SEP&gt;Saranya Ponvannan plays the role of Mani's mother in the film.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Ajay">
+      <data key="d0">Ajay</data>
+      <data key="d1">person</data>
+      <data key="d2">Ajay plays Mithran, Athreya's trusted sidekick.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Girish Karnad">
+      <data key="d0">Girish Karnad</data>
+      <data key="d1">person</data>
+      <data key="d2">Girish Karnad plays Sathyabhama and Raghu's father, Sathya's grandfather.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Mohan Raman">
+      <data key="d0">Mohan Raman</data>
+      <data key="d1">person</data>
+      <data key="d2">Mohan Raman plays Raghu, Sathya's father.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Sudha">
+      <data key="d0">Sudha</data>
+      <data key="d1">person</data>
+      <data key="d2">Sudha plays Sathya's mother.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Sathyan">
+      <data key="d0">Sathyan</data>
+      <data key="d1">person</data>
+      <data key="d2">Sathyan plays Saravanan, Mani's friend.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336350</data>
+    </node>
+    <node id="Charle">
+      <data key="d0">Charle</data>
+      <data key="d1">person</data>
+      <data key="d2">Charle plays Reddiyar.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="Appukutty">
+      <data key="d0">Appukutty</data>
+      <data key="d1">person</data>
+      <data key="d2">Appukutty plays Reddiyar's staff.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="Harsha Vardhan">
+      <data key="d0">Harsha Vardhan</data>
+      <data key="d1">person</data>
+      <data key="d2">Harsha Vardhan plays Kalai, an electrician who works for Athreya.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="Natarajan Balkrishna">
+      <data key="d0">Natarajan Balkrishna</data>
+      <data key="d1">person</data>
+      <data key="d2">Natarajan Balkrishna plays Sathya's uncle.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="T. S. Ranganathan">
+      <data key="d0">T. S. Ranganathan</data>
+      <data key="d1">person</data>
+      <data key="d2">T. S. Ranganathan plays Sathya's uncle.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="Mohan Natarajan">
+      <data key="d0">Mohan Natarajan</data>
+      <data key="d1">person</data>
+      <data key="d2">Mohan Natarajan is the producer who initially backed the film.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="Vikram">
+      <data key="d0">Vikram</data>
+      <data key="d1">person</data>
+      <data key="d2">Vikram is a film director who discussed a gadget playing an important role in a movie.&lt;SEP&gt;Vikram is an actor who was initially considered for the lead role.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="Harris Jayaraj">
+      <data key="d0">Harris Jayaraj</data>
+      <data key="d1">person</data>
+      <data key="d2">Harris Jayaraj was confirmed to score the music for the film.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336355</data>
+    </node>
+    <node id="P. C. Sreeram">
+      <data key="d0">P. C. Sreeram</data>
+      <data key="d1">person</data>
+      <data key="d2">P. C. Sreeram was to handle the film cinematography.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="Ileana D'Cruz">
+      <data key="d0">Ileana D'Cruz</data>
+      <data key="d1">person</data>
+      <data key="d2">Ileana D'Cruz was signed to do the film and was to be her re-launch in Tamil cinema.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="Mahesh Babu">
+      <data key="d0">Mahesh Babu</data>
+      <data key="d1">person</data>
+      <data key="d2">Mahesh Babu was considered for the lead role but passed on the offer.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="Office">
+      <data key="d0">Office</data>
+      <data key="d1">geo</data>
+      <data key="d2">The office is the location where Athreya confronts Mani and brutally attacks him.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="Watch">
+      <data key="d0">Watch</data>
+      <data key="d1">category</data>
+      <data key="d2">The watch is a time-traveling device central to the plot, capable of transporting its wearer through time, though initially limited to 24-hour jumps.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="School">
+      <data key="d0">School</data>
+      <data key="d1">organization</data>
+      <data key="d2">The school is the location where Sethuraman and Priya are invited to work as a science teacher and his wife, respectively.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="Original Back">
+      <data key="d0">Original Back</data>
+      <data key="d1">category</data>
+      <data key="d2">The original back is a distinguishing feature of Mani's copy of the watch, indicating its authenticity.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="Hand">
+      <data key="d0">Hand</data>
+      <data key="d1">category</data>
+      <data key="d2">The hand is the body part that Athreya chops off of Mani in a brutal attack.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336360</data>
+    </node>
+    <node id="Incurable Disease">
+      <data key="d0">Incurable Disease</data>
+      <data key="d1">category</data>
+      <data key="d2">An incurable disease is the false ailment Athreya pretends to have while disguised as Sethuraman to trick Mani.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Parents' Death">
+      <data key="d0">Parents' Death</data>
+      <data key="d1">event</data>
+      <data key="d2">The death of Mani's parents is the event that Mani seeks to prevent by traveling back in time.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Henchmen">
+      <data key="d0">Henchmen</data>
+      <data key="d1">person</data>
+      <data key="d2">Henchmen are the people who work for Athreya and assist him in his evil deeds.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Train">
+      <data key="d0">Train</data>
+      <data key="d1">geo</data>
+      <data key="d2">The train is the location where Sethuraman and Priya meet Sathyabhama.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Science Teacher">
+      <data key="d0">Science Teacher</data>
+      <data key="d1">category</data>
+      <data key="d2">A science teacher is the profession Sethuraman claims to have when meeting Sathyabhama on the train.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Watch Mechanic">
+      <data key="d0">Watch Mechanic</data>
+      <data key="d1">category</data>
+      <data key="d2">A watch mechanic is Mani's profession.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Scientist">
+      <data key="d0">Scientist</data>
+      <data key="d1">category</data>
+      <data key="d2">A scientist is Sethuraman's profession.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Twin Brother">
+      <data key="d0">Twin Brother</data>
+      <data key="d1">category</data>
+      <data key="d2">Twin brother is the relationship between Athreya and Sethuraman.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336368</data>
+    </node>
+    <node id="Love Interest">
+      <data key="d0">Love Interest</data>
+      <data key="d1">category</data>
+      <data key="d2">Love interest is the relationship between Mani and Sathyabhama.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Wife">
+      <data key="d0">Wife</data>
+      <data key="d1">category</data>
+      <data key="d2">Wife is the relationship between Priya and Sethuraman.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Adoptive Mother">
+      <data key="d0">Adoptive Mother</data>
+      <data key="d1">category</data>
+      <data key="d2">Adoptive mother is the relationship between Saranya Ponvannan and Mani.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Sidekick">
+      <data key="d0">Sidekick</data>
+      <data key="d1">category</data>
+      <data key="d2">Sidekick is the relationship between Ajay and Athreya.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Father">
+      <data key="d0">Father</data>
+      <data key="d1">category</data>
+      <data key="d2">Father is the relationship between Girish Karnad and Sathyabhama.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Mother">
+      <data key="d0">Mother</data>
+      <data key="d1">category</data>
+      <data key="d2">Mother is the relationship between Sudha and Sathyabhama.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Friend">
+      <data key="d0">Friend</data>
+      <data key="d1">category</data>
+      <data key="d2">Friend is the relationship between Sathyan and Mani.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Staff">
+      <data key="d0">Staff</data>
+      <data key="d1">category</data>
+      <data key="d2">Staff is the relationship between Appukutty and Reddiyar.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336373</data>
+    </node>
+    <node id="Electrician">
+      <data key="d0">Electrician</data>
+      <data key="d1">category</data>
+      <data key="d2">Electrician is the profession of Harsha Vardhan.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Uncle">
+      <data key="d0">Uncle</data>
+      <data key="d1">category</data>
+      <data key="d2">Uncle is the relationship between Natarajan Balkrishna and Sathyabhama.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Director">
+      <data key="d0">Director</data>
+      <data key="d1">category</data>
+      <data key="d2">Director is the profession of Vikram Kumar.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Producer">
+      <data key="d0">Producer</data>
+      <data key="d1">category</data>
+      <data key="d2">Producer is the profession of Mohan Natarajan.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Actor">
+      <data key="d0">Actor</data>
+      <data key="d1">category</data>
+      <data key="d2">Actor is the profession of Vikram.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Music">
+      <data key="d0">Music</data>
+      <data key="d1">category</data>
+      <data key="d2">Music is the profession of Harris Jayaraj.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Cinematography">
+      <data key="d0">Cinematography</data>
+      <data key="d1">category</data>
+      <data key="d2">Cinematography is the profession of P. C. Sreeram.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Triple Role">
+      <data key="d0">Triple Role</data>
+      <data key="d1">category</data>
+      <data key="d2">Triple role is the role of Suriya in the film.</data>
+      <data key="d3">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336378</data>
+    </node>
+    <node id="Twitter">
+      <data key="d0">Twitter</data>
+      <data key="d1">organization</data>
+      <data key="d2">Twitter is a social media platform used by 2D Entertainment to announce the film project.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Catherine Tresa">
+      <data key="d0">Catherine Tresa</data>
+      <data key="d1">person</data>
+      <data key="d2">Catherine Tresa was considered for the lead female role in the film.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Nashik">
+      <data key="d0">Nashik</data>
+      <data key="d1">geo</data>
+      <data key="d2">Nashik is a city in India where a romantic song was filmed for the movie.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Filmistaan Studios">
+      <data key="d0">Filmistaan Studios</data>
+      <data key="d1">organization</data>
+      <data key="d2">Filmistaan Studios in Goregaon is where certain scenes and VFX works were carried out.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Kraków">
+      <data key="d0">Kraków</data>
+      <data key="d1">geo</data>
+      <data key="d2">Kraków is a city in Poland where filming took place.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Kraków Film Commission">
+      <data key="d0">Kraków Film Commission</data>
+      <data key="d1">organization</data>
+      <data key="d2">The Kraków Film Commission supported the film project in Poland.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Kraków Film Cluster">
+      <data key="d0">Kraków Film Cluster</data>
+      <data key="d1">organization</data>
+      <data key="d2">The Kraków Film Cluster supported the film project in Poland.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Subrata Roy Sahara Stadium">
+      <data key="d0">Subrata Roy Sahara Stadium</data>
+      <data key="d1">geo</data>
+      <data key="d2">Subrata Roy Sahara Stadium in Pune is where an important sequence was shot.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336384</data>
+    </node>
+    <node id="Adithyaram Studios">
+      <data key="d0">Adithyaram Studios</data>
+      <data key="d1">organization</data>
+      <data key="d2">Adithyaram Studios in Chennai is where the last schedule of filming was done.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="Eros Music">
+      <data key="d0">Eros Music</data>
+      <data key="d1">organization</data>
+      <data key="d2">Eros Music released the soundtrack album of the film.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="Sony Music India">
+      <data key="d0">Sony Music India</data>
+      <data key="d1">organization</data>
+      <data key="d2">Sony Music India later bought the rights to the soundtrack album.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="Gadget">
+      <data key="d0">Gadget</data>
+      <data key="d1">category</data>
+      <data key="d2">A gadget plays an important role in the movie, appealing to a wide audience.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="August 2014">
+      <data key="d0">August 2014</data>
+      <data key="d1">event</data>
+      <data key="d2">August 2014 is when 2D Entertainment announced the project.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="October 2014">
+      <data key="d0">October 2014</data>
+      <data key="d1">event</data>
+      <data key="d2">October 2014 is when A. R. Rahman was announced as the film's composer.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="February 2015">
+      <data key="d0">February 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">February 2015 is when Samantha Ruth Prabhu was finalized for the lead female role.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="July 2015">
+      <data key="d0">July 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">July 2015 is when Nithya Menen was roped in to play another leading character.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336389</data>
+    </node>
+    <node id="8 April 2015">
+      <data key="d0">8 April 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">8 April 2015 is when principal photography commenced in Mumbai.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="Early June 2015">
+      <data key="d0">Early June 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">Early June 2015 is when a romantic song was filmed in Nashik.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="September 2015">
+      <data key="d0">September 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">September 2015 is when VFX works were carried out at Filmistaan studios.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="1 August 2015">
+      <data key="d0">1 August 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">1 August 2015 is when Nithya Menen began filming her portions in the city.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="Early September 2015">
+      <data key="d0">Early September 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">Early September 2015 is when the first schedule was completed.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="Mid September 2015">
+      <data key="d0">Mid September 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">Mid September 2015 is when a twenty-day schedule began in Poland.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="30 September 2015">
+      <data key="d0">30 September 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">30 September 2015 is when the second schedule of filming in Poland was wrapped up.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="26 October 2015">
+      <data key="d0">26 October 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">26 October 2015 is when the team shot an important sequence in Subrata Roy Sahara Stadium in Pune.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336394</data>
+    </node>
+    <node id="End of October 2015">
+      <data key="d0">End of October 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">End of October 2015 is when the last schedule of filming was done at Adithyaram Studios in Chennai.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="2 November 2015">
+      <data key="d0">2 November 2015</data>
+      <data key="d1">event</data>
+      <data key="d2">2 November 2015 is when the filming was completed.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="100 Days of Filming">
+      <data key="d0">100 Days of Filming</data>
+      <data key="d1">event</data>
+      <data key="d2">The film was shot for over 100 days, indicating a significant production timeline.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="VFX">
+      <data key="d0">VFX</data>
+      <data key="d1">category</data>
+      <data key="d2">More than 60 percent of the film involves VFX, highlighting its importance in the film's production.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="9 April 2016">
+      <data key="d0">9 April 2016</data>
+      <data key="d1">event</data>
+      <data key="d2">9 April 2016 is when the soundtrack album was released by Eros Music.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="Athreya's Looks">
+      <data key="d0">Athreya's Looks</data>
+      <data key="d1">category</data>
+      <data key="d2">Five to six looks were designed for the antagonist character Athreya, indicating the character's complexity.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="Cinelight">
+      <data key="d0">Cinelight</data>
+      <data key="d1">organization</data>
+      <data key="d2">Cinelight is a Kraków Company that provided the lights for filming in Poland.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="Zborow Mountain">
+      <data key="d0">Zborow Mountain</data>
+      <data key="d1">geo</data>
+      <data key="d2">Zborow Mountain is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336400</data>
+    </node>
+    <node id="Zakopane">
+      <data key="d0">Zakopane</data>
+      <data key="d1">geo</data>
+      <data key="d2">Zakopane is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336407</data>
+    </node>
+    <node id="Leba">
+      <data key="d0">Leba</data>
+      <data key="d1">geo</data>
+      <data key="d2">Leba is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336407</data>
+    </node>
+    <node id="Lewin Klodzki">
+      <data key="d0">Lewin Klodzki</data>
+      <data key="d1">geo</data>
+      <data key="d2">Lewin Klodzki is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336407</data>
+    </node>
+    <node id="Jedlina Zdroj">
+      <data key="d0">Jedlina Zdroj</data>
+      <data key="d1">geo</data>
+      <data key="d2">Jedlina Zdroj is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336407</data>
+    </node>
+    <node id="Wałbrzych">
+      <data key="d0">Wałbrzych</data>
+      <data key="d1">geo</data>
+      <data key="d2">Wałbrzych is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336407</data>
+    </node>
+    <node id="Bulowice">
+      <data key="d0">Bulowice</data>
+      <data key="d1">geo</data>
+      <data key="d2">Bulowice is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336407</data>
+    </node>
+    <node id="Nowe Brzesko">
+      <data key="d0">Nowe Brzesko</data>
+      <data key="d1">geo</data>
+      <data key="d2">Nowe Brzesko is a location in Poland where the crew filmed action scenes and songs.</data>
+      <data key="d3">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d4">inputs/1.txt</data>
+      <data key="d5">1753336407</data>
+    </node>
+    <edge source="24" target="Vikram Kumar">
+      <data key="d6">10.0</data>
+      <data key="d7">Vikram Kumar directed and wrote the film 24.</data>
+      <data key="d8">direction,writing</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336407</data>
+    </edge>
+    <edge source="24" target="Suriya">
+      <data key="d6">19.0</data>
+      <data key="d7">Suriya played triple roles in the film 24.&lt;SEP&gt;Suriya produced and starred in the film 24.</data>
+      <data key="d8">acting,acting role,film title,production</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="24" target="2D Entertainment">
+      <data key="d6">9.0</data>
+      <data key="d7">2D Entertainment produced the film 24.</data>
+      <data key="d8">production</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="24" target="Vairamuthu">
+      <data key="d6">8.0</data>
+      <data key="d7">Vairamuthu wrote lyrics for the songs in the film 24.</data>
+      <data key="d8">film soundtrack,lyricist</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="24" target="Madhan Karky">
+      <data key="d6">8.0</data>
+      <data key="d7">Madhan Karky wrote lyrics for the songs in the film 24.</data>
+      <data key="d8">film soundtrack,lyricist</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="Vikram Kumar" target="24 (2016 Film)">
+      <data key="d6">10.0</data>
+      <data key="d7">Vikram Kumar directed and wrote the film 24.</data>
+      <data key="d8">direction,writing</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="Vikram Kumar" target="Suriya">
+      <data key="d6">15.0</data>
+      <data key="d7">Vikram Kumar changed the screenplay of the film that Suriya starred in.&lt;SEP&gt;Vikram Kumar directed Suriya in the film.</data>
+      <data key="d8">acting,collaboration,film direction,film production</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="Vikram Kumar" target="Director">
+      <data key="d6">9.0</data>
+      <data key="d7">Vikram Kumar is the director of the film.</data>
+      <data key="d8">leadership,profession</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="Suriya" target="24 (2016 Film)">
+      <data key="d6">10.0</data>
+      <data key="d7">Suriya produced and starred in the film 24.</data>
+      <data key="d8">acting,production</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="Suriya" target="Critics Best Actor Award">
+      <data key="d6">9.0</data>
+      <data key="d7">Suriya won the Critics Best Actor Award for his role in 24.</data>
+      <data key="d8">acting,awards</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="Suriya" target="Triple Role">
+      <data key="d6">9.0</data>
+      <data key="d7">Suriya plays a triple role in the film.</data>
+      <data key="d8">acting,performance</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="Suriya" target="2D Entertainment">
+      <data key="d6">10.0</data>
+      <data key="d7">Suriya owns the production company 2D Entertainment.</data>
+      <data key="d8">ownership,production</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="Suriya" target="A. R. Rahman">
+      <data key="d6">8.0</data>
+      <data key="d7">Suriya starred in the film for which A. R. Rahman composed the music.</data>
+      <data key="d8">collaboration,film production</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="Suriya" target="Samantha Ruth Prabhu">
+      <data key="d6">8.0</data>
+      <data key="d7">Samantha Ruth Prabhu plays the love interest opposite Suriya's character in the film.</data>
+      <data key="d8">acting role,character relationship</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="Suriya" target="Nithya Menen">
+      <data key="d6">8.0</data>
+      <data key="d7">Nithya Menen plays the love interest opposite Suriya's character in the film.</data>
+      <data key="d8">acting role,character relationship</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="Samantha Ruth Prabhu" target="February 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">Samantha Ruth Prabhu was finalized for the lead female role in February 2015.</data>
+      <data key="d8">casting,timeline</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="Nithya Menen" target="July 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">Nithya Menen was roped in to play another leading character in July 2015.</data>
+      <data key="d8">casting,timeline</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="Nithya Menen" target="1 August 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">Nithya Menen began filming her portions on 1 August 2015.</data>
+      <data key="d8">actress,filming start</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+    <edge source="A. R. Rahman" target="24 (2016 Film)">
+      <data key="d6">8.0</data>
+      <data key="d7">A. R. Rahman composed the music for the film 24.</data>
+      <data key="d8">film,music</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="A. R. Rahman" target="Eros Music">
+      <data key="d6">8.0</data>
+      <data key="d7">Eros Music released the soundtrack album composed by A. R. Rahman.</data>
+      <data key="d8">composer,music release</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="A. R. Rahman" target="Sony Music India">
+      <data key="d6">8.0</data>
+      <data key="d7">Sony Music India bought the rights to the soundtrack album composed by A. R. Rahman.</data>
+      <data key="d8">composer,music rights</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="A. R. Rahman" target="October 2014">
+      <data key="d6">8.0</data>
+      <data key="d7">A. R. Rahman was announced as the film's composer in October 2014.</data>
+      <data key="d8">composer announcement,timeline</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="2D Entertainment" target="24 (2016 Film)">
+      <data key="d6">9.0</data>
+      <data key="d7">2D Entertainment produced the film 24.</data>
+      <data key="d8">production</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="2D Entertainment" target="Twitter">
+      <data key="d6">7.0</data>
+      <data key="d7">2D Entertainment used Twitter to announce the film project.</data>
+      <data key="d8">announcement,social media</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="2D Entertainment" target="August 2014">
+      <data key="d6">8.0</data>
+      <data key="d7">2D Entertainment announced the project in August 2014.</data>
+      <data key="d8">project announcement,timeline</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="Eros International" target="24 (2016 Film)">
+      <data key="d6">6.0</data>
+      <data key="d7">Eros International distributed the film 24.</data>
+      <data key="d8">distribution,film</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="Studio Green" target="24 (2016 Film)">
+      <data key="d6">6.0</data>
+      <data key="d7">Studio Green distributed the film 24.</data>
+      <data key="d8">distribution,film</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="Mumbai" target="Filmistaan Studios">
+      <data key="d6">9.0</data>
+      <data key="d7">Filmistaan Studios is located in Mumbai.</data>
+      <data key="d8">location,studio</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="Mumbai" target="8 April 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">Principal photography commenced in Mumbai on 8 April 2015.</data>
+      <data key="d8">filming start,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="Pune" target="Subrata Roy Sahara Stadium">
+      <data key="d6">9.0</data>
+      <data key="d7">Subrata Roy Sahara Stadium is located in Pune.</data>
+      <data key="d8">location,stadium</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="Pune" target="26 October 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">The team shot an important sequence in Subrata Roy Sahara Stadium in Pune on 26 October 2015.</data>
+      <data key="d8">filming,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+    <edge source="Poland" target="Kraków">
+      <data key="d6">9.0</data>
+      <data key="d7">Kraków is a city in Poland where filming took place.</data>
+      <data key="d8">filming location,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="Poland" target="Kraków Film Commission">
+      <data key="d6">7.0</data>
+      <data key="d7">The Kraków Film Commission is located in Poland and supported the film project.</data>
+      <data key="d8">film support,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="Poland" target="Kraków Film Cluster">
+      <data key="d6">7.0</data>
+      <data key="d7">The Kraków Film Cluster is located in Poland and supported the film project.</data>
+      <data key="d8">film support,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="Poland" target="Mid September 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">A twenty-day schedule began in Poland in mid-September 2015.</data>
+      <data key="d8">filming schedule,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+    <edge source="Poland" target="30 September 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">The second schedule of filming in Poland was wrapped up on 30 September 2015.</data>
+      <data key="d8">filming end,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+    <edge source="Poland" target="Cinelight">
+      <data key="d6">7.0</data>
+      <data key="d7">Cinelight provided the lights for filming in Poland.</data>
+      <data key="d8">filming location,lighting</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Poland" target="Zborow Mountain">
+      <data key="d6">9.0</data>
+      <data key="d7">Zborow Mountain is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Poland" target="Zakopane">
+      <data key="d6">9.0</data>
+      <data key="d7">Zakopane is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Poland" target="Leba">
+      <data key="d6">9.0</data>
+      <data key="d7">Leba is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Poland" target="Lewin Klodzki">
+      <data key="d6">9.0</data>
+      <data key="d7">Lewin Klodzki is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Poland" target="Jedlina Zdroj">
+      <data key="d6">9.0</data>
+      <data key="d7">Jedlina Zdroj is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Poland" target="Wałbrzych">
+      <data key="d6">9.0</data>
+      <data key="d7">Wałbrzych is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Poland" target="Bulowice">
+      <data key="d6">9.0</data>
+      <data key="d7">Bulowice is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336481</data>
+    </edge>
+    <edge source="Poland" target="Nowe Brzesko">
+      <data key="d6">9.0</data>
+      <data key="d7">Nowe Brzesko is a filming location in Poland.</data>
+      <data key="d8">country,filming location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336481</data>
+    </edge>
+    <edge source="Chennai" target="Adithyaram Studios">
+      <data key="d6">9.0</data>
+      <data key="d7">Adithyaram Studios is located in Chennai.</data>
+      <data key="d8">location,studio</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336458</data>
+    </edge>
+    <edge source="Chennai" target="End of October 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">The last schedule of filming was done at Adithyaram Studios in Chennai at the end of October 2015.</data>
+      <data key="d8">filming end,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+    <edge source="Vairamuthu" target="24 (2016 Film)">
+      <data key="d6">7.0</data>
+      <data key="d7">Vairamuthu wrote the lyrics for the film 24.</data>
+      <data key="d8">film,lyrics</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="Madhan Karky" target="24 (2016 Film)">
+      <data key="d6">7.0</data>
+      <data key="d7">Madhan Karky wrote the lyrics for the film 24.</data>
+      <data key="d8">film,lyrics</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="Sethuraman" target="Athreya">
+      <data key="d6">17.0</data>
+      <data key="d7">Athreya is Sethuraman's twin brother and antagonist, seeking to exploit Sethuraman's creation for his own gain.&lt;SEP&gt;Sethuraman and Athreya are twin brothers and rivals in the film 24.</data>
+      <data key="d8">conflict,family,rivalry,sibling rivalry</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21&lt;SEP&gt;chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="Sethuraman" target="Manikandan">
+      <data key="d6">8.0</data>
+      <data key="d7">Sethuraman is the father of Manikandan.</data>
+      <data key="d8">family</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="Sethuraman" target="Time-Traveling Watch">
+      <data key="d6">9.0</data>
+      <data key="d7">Sethuraman invented the time-traveling watch.</data>
+      <data key="d8">invention,technology</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="Sethuraman" target="Mani">
+      <data key="d6">7.0</data>
+      <data key="d7">Mani is Sethuraman's biological son and is tricked by Athreya disguised as Sethuraman to upgrade the watch.</data>
+      <data key="d8">deception,family</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="Sethuraman" target="Priya">
+      <data key="d6">9.0</data>
+      <data key="d7">Sethuraman and Priya are married and are Mani's biological parents. They work together to protect their family from Athreya.</data>
+      <data key="d8">family,partnership</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="Sethuraman" target="Sathyabhama aka Sathya">
+      <data key="d6">5.0</data>
+      <data key="d7">Sethuraman and Priya meet Sathyabhama on a train and are invited to work at her family's school.</data>
+      <data key="d8">new beginning,opportunity</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="Sethuraman" target="School">
+      <data key="d6">7.0</data>
+      <data key="d7">Sethuraman and Priya are invited to work at the school.</data>
+      <data key="d8">employment,opportunity</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="Sethuraman" target="Train">
+      <data key="d6">6.0</data>
+      <data key="d7">Sethuraman and Priya meet Sathyabhama on a train.</data>
+      <data key="d8">meeting,travel</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Sethuraman" target="Science Teacher">
+      <data key="d6">5.0</data>
+      <data key="d7">Sethuraman claims to be a science teacher when meeting Sathyabhama.</data>
+      <data key="d8">deception,profession</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Sethuraman" target="Scientist">
+      <data key="d6">9.0</data>
+      <data key="d7">Sethuraman's profession is a scientist.</data>
+      <data key="d8">expertise,profession</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Priya" target="Wife">
+      <data key="d6">10.0</data>
+      <data key="d7">Priya is Sethuraman's wife.</data>
+      <data key="d8">family,relationship</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Manikandan" target="Athreya">
+      <data key="d6">7.0</data>
+      <data key="d7">Athreya is Manikandan's uncle and antagonist.</data>
+      <data key="d8">antagonism,family</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="Manikandan" target="Sathya">
+      <data key="d6">6.0</data>
+      <data key="d7">Manikandan falls in love with Sathya.</data>
+      <data key="d8">romance</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336412</data>
+    </edge>
+    <edge source="Manikandan" target="Time-Traveling Watch">
+      <data key="d6">7.0</data>
+      <data key="d7">Manikandan discovers the time-traveling watch.</data>
+      <data key="d8">discovery,inheritance</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="Athreya" target="Time-Traveling Watch">
+      <data key="d6">8.0</data>
+      <data key="d7">Athreya seeks to possess the time-traveling watch.</data>
+      <data key="d8">conflict,greed</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="Athreya" target="Mani">
+      <data key="d6">9.0</data>
+      <data key="d7">Athreya attacks and kills Mani to get the original watch.</data>
+      <data key="d8">antagonism,violence</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="Athreya" target="Mithran">
+      <data key="d6">7.0</data>
+      <data key="d7">Mithran is Athreya's trusted sidekick.</data>
+      <data key="d8">loyalty,support</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="Athreya" target="Office">
+      <data key="d6">6.0</data>
+      <data key="d7">Athreya summons Mani to the office to attack him.</data>
+      <data key="d8">confrontation,location</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="Athreya" target="Watch">
+      <data key="d6">7.0</data>
+      <data key="d7">Athreya seeks to control the watch for his own purposes.</data>
+      <data key="d8">control,desire</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="Athreya" target="Hand">
+      <data key="d6">9.0</data>
+      <data key="d7">Athreya chops off Mani's hand in a brutal attack.</data>
+      <data key="d8">injury,violence</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Athreya" target="Incurable Disease">
+      <data key="d6">8.0</data>
+      <data key="d7">Athreya pretends to have an incurable disease to trick Mani.</data>
+      <data key="d8">deception,manipulation</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Athreya" target="Henchmen">
+      <data key="d6">7.0</data>
+      <data key="d7">Athreya uses henchmen to assist him in his evil deeds.</data>
+      <data key="d8">assistance,support</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Athreya" target="Twin Brother">
+      <data key="d6">10.0</data>
+      <data key="d7">Athreya is Sethuraman's twin brother.</data>
+      <data key="d8">family,relationship</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Athreya" target="Athreya's Looks">
+      <data key="d6">8.0</data>
+      <data key="d7">The character Athreya had multiple looks designed for him.</data>
+      <data key="d8">character design,visual representation</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336481</data>
+    </edge>
+    <edge source="Sathya" target="Mani">
+      <data key="d6">5.0</data>
+      <data key="d7">Mani interacts with Sathya at the end of the film.</data>
+      <data key="d8">future,interaction</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="24 (2016 Film)" target="64th National Film Awards">
+      <data key="d6">8.0</data>
+      <data key="d7">24 won awards at the 64th National Film Awards.</data>
+      <data key="d8">awards,recognition</data>
+      <data key="d9">chunk-c3d079344c0515b4744baa37c05fcb21</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336418</data>
+    </edge>
+    <edge source="1990" target="Mani">
+      <data key="d6">9.0</data>
+      <data key="d7">Mani travels back to 1990 to warn his parents.</data>
+      <data key="d8">time travel,warning</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="Mani" target="Sathyabhama aka Sathya">
+      <data key="d6">6.0</data>
+      <data key="d7">Mani and Sathya are love interests.</data>
+      <data key="d8">relationship,romance</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336423</data>
+    </edge>
+    <edge source="Mani" target="Watch">
+      <data key="d6">8.0</data>
+      <data key="d7">Mani is a watch mechanic and possesses the original watch.</data>
+      <data key="d8">possession,profession</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336429</data>
+    </edge>
+    <edge source="Mani" target="Original Back">
+      <data key="d6">6.0</data>
+      <data key="d7">Mani's watch has the original back, indicating its authenticity.</data>
+      <data key="d8">authenticity,possession</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Mani" target="Parents' Death">
+      <data key="d6">10.0</data>
+      <data key="d7">Mani seeks to prevent his parents' death by traveling back in time.</data>
+      <data key="d8">motivation,prevention</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Mani" target="Watch Mechanic">
+      <data key="d6">8.0</data>
+      <data key="d7">Mani's profession is a watch mechanic.</data>
+      <data key="d8">profession,skill</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336436</data>
+    </edge>
+    <edge source="Mani" target="Love Interest">
+      <data key="d6">6.0</data>
+      <data key="d7">Mani and Sathyabhama are love interests.</data>
+      <data key="d8">relationship,romance</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Saranya Ponvannan" target="Adoptive Mother">
+      <data key="d6">7.0</data>
+      <data key="d7">Saranya Ponvannan is Mani's adoptive mother.</data>
+      <data key="d8">family,relationship</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Ajay" target="Sidekick">
+      <data key="d6">7.0</data>
+      <data key="d7">Ajay is Athreya's sidekick.</data>
+      <data key="d8">loyalty,support</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Girish Karnad" target="Father">
+      <data key="d6">8.0</data>
+      <data key="d7">Girish Karnad is Sathyabhama's father.</data>
+      <data key="d8">family,relationship</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Sudha" target="Mother">
+      <data key="d6">8.0</data>
+      <data key="d7">Sudha is Sathyabhama's mother.</data>
+      <data key="d8">family,relationship</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336442</data>
+    </edge>
+    <edge source="Sathyan" target="Friend">
+      <data key="d6">6.0</data>
+      <data key="d7">Sathyan is Mani's friend.</data>
+      <data key="d8">friendship,support</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="Appukutty" target="Staff">
+      <data key="d6">5.0</data>
+      <data key="d7">Appukutty is Reddiyar's staff.</data>
+      <data key="d8">employment,support</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="Harsha Vardhan" target="Electrician">
+      <data key="d6">6.0</data>
+      <data key="d7">Harsha Vardhan is an electrician.</data>
+      <data key="d8">profession,skill</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="Natarajan Balkrishna" target="Uncle">
+      <data key="d6">7.0</data>
+      <data key="d7">Natarajan Balkrishna is Sathyabhama's uncle.</data>
+      <data key="d8">family,relationship</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="Mohan Natarajan" target="Producer">
+      <data key="d6">9.0</data>
+      <data key="d7">Mohan Natarajan is the producer of the film.</data>
+      <data key="d8">leadership,profession</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="Vikram" target="Actor">
+      <data key="d6">7.0</data>
+      <data key="d7">Vikram is an actor.</data>
+      <data key="d8">profession,skill</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="Vikram" target="Gadget">
+      <data key="d6">7.0</data>
+      <data key="d7">Vikram mentioned the importance of a gadget in his film.</data>
+      <data key="d8">film element,technology</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="Harris Jayaraj" target="Music">
+      <data key="d6">8.0</data>
+      <data key="d7">Harris Jayaraj is the music composer.</data>
+      <data key="d8">profession,skill</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336447</data>
+    </edge>
+    <edge source="P. C. Sreeram" target="Cinematography">
+      <data key="d6">8.0</data>
+      <data key="d7">P. C. Sreeram is the cinematographer.</data>
+      <data key="d8">profession,skill</data>
+      <data key="d9">chunk-8156a7291d1ced1406f0cdc8e322d56d</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336453</data>
+    </edge>
+    <edge source="Nashik" target="Early June 2015">
+      <data key="d6">8.0</data>
+      <data key="d7">A romantic song was filmed in Nashik in early June 2015.</data>
+      <data key="d8">filming,location</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336463</data>
+    </edge>
+    <edge source="Filmistaan Studios" target="September 2015">
+      <data key="d6">7.0</data>
+      <data key="d7">VFX works were carried out at Filmistaan studios by September 2015.</data>
+      <data key="d8">VFX,studio</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+    <edge source="Kraków Film Commission" target="Cinelight">
+      <data key="d6">5.0</data>
+      <data key="d7">Kraków Film Commission may have worked with Cinelight as both are based in Kraków and supported the film.</data>
+      <data key="d8">film support,local business</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336476</data>
+    </edge>
+    <edge source="Eros Music" target="9 April 2016">
+      <data key="d6">8.0</data>
+      <data key="d7">The soundtrack album was released by Eros Music on 9 April 2016.</data>
+      <data key="d8">music release,timeline</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+    <edge source="2 November 2015" target="100 Days of Filming">
+      <data key="d6">9.0</data>
+      <data key="d7">The filming was completed on 2 November 2015, after 100 days of filming.</data>
+      <data key="d8">completion,filming duration</data>
+      <data key="d9">chunk-eb5cbc053c93621b886f89a7846b0c88</data>
+      <data key="d10">inputs/1.txt</data>
+      <data key="d11">1753336468</data>
+    </edge>
+  </graph>
+</graphml>

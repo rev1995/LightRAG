@@ -393,11 +393,16 @@ class DocsStatusesResponse(BaseModel):
 
     Attributes:
         statuses: Dictionary mapping document status to lists of document status responses
+        counts: Dictionary mapping document status to its count
     """
 
     statuses: Dict[DocStatus, List[DocStatusResponse]] = Field(
         default_factory=dict,
         description="Dictionary mapping document status to lists of document status responses",
+    )
+    counts: Dict[str, int] = Field(
+        default_factory=dict,
+        description="Dictionary mapping document status to its count",
     )
 
     class Config:
@@ -427,7 +432,14 @@ class DocsStatusesResponse(BaseModel):
                             "file_path": "processed_doc.pdf",
                         }
                     ],
-                }
+                },
+                "counts": {
+                    "all": 2,
+                    "pending": 1,
+                    "processing": 0,
+                    "processed": 1,
+                    "failed": 0,
+                },
             }
         }
 
@@ -1527,6 +1539,9 @@ def create_document_routes(
             HTTPException: If an error occurs while retrieving document statuses (500).
         """
         try:
+            # Get status counts first
+            status_counts = await rag.doc_status.get_status_counts()
+
             statuses = (
                 DocStatus.PENDING,
                 DocStatus.PROCESSING,
@@ -1558,6 +1573,17 @@ def create_document_routes(
                             file_path=doc_status.file_path,
                         )
                     )
+            # Populate counts
+            response.counts["pending"] = status_counts.get(DocStatus.PENDING.value, 0)
+            response.counts["processing"] = status_counts.get(
+                DocStatus.PROCESSING.value, 0
+            )
+            response.counts["processed"] = status_counts.get(
+                DocStatus.PROCESSED.value, 0
+            )
+            response.counts["failed"] = status_counts.get(DocStatus.FAILED.value, 0)
+            response.counts["all"] = sum(response.counts.values())
+
             return response
         except Exception as e:
             logger.error(f"Error GET /documents: {str(e)}")

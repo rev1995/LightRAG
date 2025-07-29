@@ -39,10 +39,36 @@ from dotenv import load_dotenv
 # Import the production pipeline
 from production_rag_pipeline import ProductionRAGPipeline, RAGConfig
 from lightrag.utils import logger, setup_logger
-
-# --- CHANGE: Import DocStatus and get_namespace_data for accurate status reporting
-from lightrag.base import DocStatus
+from lightrag.base import DocStatus, DocProcessingStatus
 from lightrag.kg.shared_storage import get_namespace_data
+
+
+def format_datetime(dt: Any) -> Optional[str]:
+    """Format datetime to ISO format string with timezone information
+
+    Args:
+        dt: Datetime object, string, or None
+
+    Returns:
+        ISO format string with timezone information, or None if input is None
+    """
+    if dt is None:
+        return None
+    if isinstance(dt, str):
+        return dt
+
+    # Check if datetime object has timezone information
+    if isinstance(dt, datetime):
+        # If datetime object has no timezone info (naive datetime), add UTC timezone
+        if dt.tzinfo is None:
+            from datetime import timezone
+
+            dt = dt.replace(tzinfo=timezone.utc)
+
+    # Return ISO format string with timezone information
+    return dt.isoformat()
+
+
 
 # Load environment variables
 load_dotenv()
@@ -113,6 +139,7 @@ class KnowledgeGraphResponse(BaseModel):
     """Response model for knowledge graph"""
     nodes: List[Dict[str, Any]]
     edges: List[Dict[str, Any]]
+    is_truncated: bool = False
 
 class ClearCacheRequest(BaseModel):
     """Request model for clearing cache"""
@@ -440,14 +467,14 @@ async def get_pipeline_status():
             raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
         
         # Get actual pipeline status counts from the backend
-        processing_status = await pipeline.rag.get_processing_status()
+        status_counts = await pipeline.rag.doc_status.get_status_counts()
         
         # Map the keys from `DocStatus` enum to the response fields
-        completed_count = processing_status.get(DocStatus.PROCESSED.value, 0)
-        processing_count = processing_status.get(DocStatus.PROCESSING.value, 0)
-        pending_count = processing_status.get(DocStatus.PENDING.value, 0)
-        failed_count = processing_status.get(DocStatus.FAILED.value, 0)
-        total_docs = sum(processing_status.values())
+        completed_count = status_counts.get(DocStatus.PROCESSED.value, 0)
+        processing_count = status_counts.get(DocStatus.PROCESSING.value, 0)
+        pending_count = status_counts.get(DocStatus.PENDING.value, 0)
+        failed_count = status_counts.get(DocStatus.FAILED.value, 0)
+        total_docs = sum(status_counts.values())
 
         # Get real-time job status from the shared state
         shared_pipeline_status = await get_namespace_data("pipeline_status")
@@ -490,14 +517,33 @@ async def get_document_status(doc_id: str, user: User = Depends(get_current_user
         logger.error(f"Get document status error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/documents", response_model=DocumentListResponse, dependencies=[Depends(api_key_auth)])
+@app.get("/documents", dependencies=[Depends(api_key_auth)])
 async def list_documents(user: User = Depends(get_current_user)):
     try:
         if not pipeline:
             raise HTTPException(status_code=503, detail="RAG pipeline not initialized")
-        
-        documents = await pipeline.list_documents()
-        return {"documents": documents, "total": len(documents)}
+
+        # Get all document statuses
+        statuses = await pipeline.rag.list_doc_statuses()
+
+        # Format the response
+        formatted_statuses = []
+        for status in statuses:
+            formatted_statuses.append(
+                {
+                    "id": status["id"],
+                    "status": status["status"].value if isinstance(status["status"], DocStatus) else status["status"],
+                    "created_at": format_datetime(status["created_at"]),
+                    "updated_at": format_datetime(status["updated_at"]),
+                    "error": status["error"],
+                    "message": f"{status['content_summary']}",
+                }
+            )
+
+        return {
+            "documents": formatted_statuses,
+            "total": len(formatted_statuses),
+        }
     except Exception as e:
         logger.error(f"List documents error: {str(e)}\n{traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))

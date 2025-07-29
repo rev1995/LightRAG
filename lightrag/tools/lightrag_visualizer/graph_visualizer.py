@@ -234,13 +234,13 @@ class GraphViewer:
 
             if self.graph:
                 node_data = self.graph.nodes[self.selected_node.label]
-                imgui.text(f"Type: {node_data.get('type', 'default')}")
+                imgui.text(f"Type: {node_data.get('entity_type', 'default')}")
 
                 degree = self.graph.degree[self.selected_node.label]
                 imgui.text(f"Degree: {degree}")
 
                 for key, value in node_data.items():
-                    if key != "type":
+                    if key not in ["type", "entity_type"]:
                         imgui.text(f"{key}: {value}")
                         if value and imgui.is_item_hovered():
                             imgui.set_tooltip(str(value))
@@ -250,34 +250,36 @@ class GraphViewer:
                 connections = self.graph[self.selected_node.label]
                 if connections:
                     imgui.text("Connections:")
-                    keys = next(iter(connections.values())).keys()
-                    if imgui.begin_table(
-                        "Connections",
-                        len(keys) + 1,
-                        imgui.TableFlags_.borders
-                        | imgui.TableFlags_.row_bg
-                        | imgui.TableFlags_.resizable
-                        | imgui.TableFlags_.hideable,
-                    ):
-                        imgui.table_setup_column("Node")
-                        for key in keys:
-                            imgui.table_setup_column(key)
-                        imgui.table_headers_row()
+                    # Check if connections is not empty before accessing its values
+                    if connections.values():
+                        keys = next(iter(connections.values())).keys()
+                        if imgui.begin_table(
+                            "Connections",
+                            len(keys) + 1,
+                            imgui.TableFlags_.borders
+                            | imgui.TableFlags_.row_bg
+                            | imgui.TableFlags_.resizable
+                            | imgui.TableFlags_.hideable,
+                        ):
+                            imgui.table_setup_column("Node")
+                            for key in keys:
+                                imgui.table_setup_column(key)
+                            imgui.table_headers_row()
 
-                        for neighbor, edge_data in connections.items():
-                            imgui.table_next_row()
-                            imgui.table_set_column_index(0)
-                            if imgui.selectable(str(neighbor), True)[0]:
-                                # Select neighbor node
-                                self.selected_node = self.id_node_map[neighbor]
-                                self.position = self.selected_node.position - self.front
-                            for idx, key in enumerate(keys):
-                                imgui.table_set_column_index(idx + 1)
-                                value = str(edge_data.get(key, ""))
-                                imgui.text(value)
-                                if value and imgui.is_item_hovered():
-                                    imgui.set_tooltip(value)
-                        imgui.end_table()
+                            for neighbor, edge_data in connections.items():
+                                imgui.table_next_row()
+                                imgui.table_set_column_index(0)
+                                if imgui.selectable(str(neighbor), True)[0]:
+                                    # Select neighbor node
+                                    self.selected_node = self.id_node_map[neighbor]
+                                    self.position = self.selected_node.position - self.front
+                                for idx, key in enumerate(keys):
+                                    imgui.table_set_column_index(idx + 1)
+                                    value = str(edge_data.get(key, ""))
+                                    imgui.text(value)
+                                    if value and imgui.is_item_hovered():
+                                        imgui.set_tooltip(value)
+                            imgui.end_table()
 
             imgui.end()
 

@@ -159,6 +159,7 @@ export type DocStatusResponse = {
 
 export type DocsStatusesResponse = {
   statuses: Record<DocStatus, DocStatusResponse[]>
+  counts: Record<string, number>
 }
 
 export type AuthStatusResponse = {

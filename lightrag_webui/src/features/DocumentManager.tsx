@@ -278,16 +278,9 @@ export default function DocumentManager() {
 
   // Calculate document counts for each status
   const documentCounts = useMemo(() => {
-    if (!docs) return { all: 0 } as Record<string, number>;
+    if (!docs) return { all: 0, pending: 0, processing: 0, processed: 0, failed: 0 } as Record<string, number>;
 
-    const counts: Record<string, number> = { all: 0 };
-
-    Object.entries(docs.statuses).forEach(([status, documents]) => {
-      counts[status as DocStatus] = documents.length;
-      counts.all += documents.length;
-    });
-
-    return counts;
+    return docs.counts;
   }, [docs]);
 
   // Store previous status counts

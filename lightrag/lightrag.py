@@ -1795,11 +1795,11 @@ class LightRAG:
         # Return the dictionary containing statuses only for the found document IDs
         return found_statuses
 
-    async def list_doc_statuses(self) -> list[DocProcessingStatus]:
+    async def list_doc_statuses(self) -> list[dict]:
         """List all document statuses in the system
         
         Returns:
-            list[DocProcessingStatus]: List of all document statuses
+            list[dict]: List of all document statuses, where each dict has an 'id' field.
         """
         # Get documents from all possible statuses
         pending_docs = await self.get_docs_by_status(DocStatus.PENDING)
@@ -1810,7 +1810,10 @@ class LightRAG:
         # Combine all documents into a single list
         all_docs = []
         for docs in [pending_docs, processing_docs, processed_docs, failed_docs]:
-            all_docs.extend(list(docs.values()))
+            for doc_id, status_obj in docs.items():
+                status_dict = asdict(status_obj)
+                status_dict['id'] = doc_id
+                all_docs.append(status_dict)
             
         return all_docs
         

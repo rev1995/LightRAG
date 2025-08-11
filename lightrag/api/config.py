@@ -11,7 +11,7 @@ from lightrag.llm.binding_options import OllamaEmbeddingOptions, OllamaLLMOption
 import sys
 
 from lightrag.constants import (
-    DEFAULT_WOKERS,
+    DEFAULT_WORKERS,
     DEFAULT_TIMEOUT,
     DEFAULT_TOP_K,
     DEFAULT_CHUNK_TOP_K,
@@ -230,7 +230,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--workers",
         type=int,
-        default=get_env_value("WORKERS", DEFAULT_WOKERS, int),
+        default=get_env_value("WORKERS", DEFAULT_WORKERS, int),
         help="Number of worker processes (default: from env or 1)",
     )
 

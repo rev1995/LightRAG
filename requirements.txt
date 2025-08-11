@@ -17,6 +17,11 @@ python-dotenv>=1.0.0
 pydantic>=2.5.0
 pydantic-settings>=2.1.0
 
+# Dynamic package management and utilities
+pipmaster>=1.0.0
+ascii-colors>=0.3.0
+pyuca>=1.2.0
+
 # HTTP and Async
 aiohttp>=3.9.0
 aiofiles>=23.2.0

@@ -73,8 +73,7 @@ def check_env_file():
     print_colored("✅ .env file found", Colors.GREEN)
     
     # Load and validate key environment variables
-    from dotenv import load_dotenv
-    load_dotenv(dotenv_path=".env", override=False)
+    # (dotenv already loaded at module level)
     
     required_vars = [
         "GEMINI_API_KEY",
@@ -176,8 +175,7 @@ def validate_gemini_config():
 
 def get_server_config():
     """Get server configuration from environment"""
-    from dotenv import load_dotenv
-    load_dotenv(dotenv_path=".env", override=False)
+    # Environment already loaded at module level
     
     config = {
         "host": os.getenv("HOST", "0.0.0.0"),

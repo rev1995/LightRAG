@@ -27,8 +27,7 @@ from dotenv import load_dotenv
 load_dotenv(dotenv_path=".env", override=False)
 
 # LightRAG imports (built from source)
-import sys
-sys.path.insert(0, './lightrag')
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lightrag'))
 
 from lightrag import LightRAG, QueryParam
 from lightrag.utils import EmbeddingFunc, logger, setup_logger

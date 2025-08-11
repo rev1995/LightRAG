@@ -7,7 +7,7 @@ consistency and makes maintenance easier.
 """
 
 # Default values for server settings
-DEFAULT_WOKERS = 2
+DEFAULT_WORKERS = 2
 DEFAULT_TIMEOUT = 150
 
 # Default values for extraction settings

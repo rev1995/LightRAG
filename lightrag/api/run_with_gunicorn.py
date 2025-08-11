@@ -13,7 +13,7 @@ from lightrag.utils import get_env_value
 from lightrag.kg.shared_storage import initialize_share_data, finalize_share_data
 
 from lightrag.constants import (
-    DEFAULT_WOKERS,
+    DEFAULT_WORKERS,
     DEFAULT_TIMEOUT,
 )
 
@@ -128,7 +128,7 @@ def main():
             gunicorn_config.workers = (
                 global_args.workers
                 if global_args.workers
-                else get_env_value("WORKERS", DEFAULT_WOKERS, int)
+                else get_env_value("WORKERS", DEFAULT_WORKERS, int)
             )
 
             # Bind configuration prioritizes command line arguments

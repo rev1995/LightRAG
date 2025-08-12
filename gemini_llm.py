@@ -23,7 +23,7 @@ except ImportError:
 
 # Add LightRAG to path for imports
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lightrag'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lightrag'))
 
 from lightrag.utils import TokenTracker, logger
 from lightrag.types import GPTKeywordExtractionFormat

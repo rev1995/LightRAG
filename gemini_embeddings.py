@@ -25,7 +25,7 @@ except ImportError:
 
 # Add LightRAG to path for imports
 import sys
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lightrag'))
+sys.path.append(os.path.join(os.path.dirname(__file__), 'lightrag'))
 
 from lightrag.utils import logger
 
@@ -52,7 +52,7 @@ class GeminiEmbeddingConfig:
     def from_env(cls) -> "GeminiEmbeddingConfig":
         """Create configuration from environment variables"""
         return cls(
-            api_key=os.getenv("EMBEDDING_API_KEY") or os.getenv("GEMINI_API_KEY", ""),
+            api_key=os.getenv("GEMINI_API_KEY", ""),
             model=os.getenv("EMBEDDING_MODEL", "text-embedding-001"),
             base_url=os.getenv("EMBEDDING_BASE_URL", "https://generativelanguage.googleapis.com"),
             embedding_dim=int(os.getenv("EMBEDDING_DIM", "3072")),
@@ -191,7 +191,7 @@ class GeminiEmbeddings:
         self._initialize_client()
         
         if not self.config.api_key:
-            raise ValueError("Gemini API key is required. Set EMBEDDING_API_KEY or GEMINI_API_KEY environment variable.")
+            raise ValueError("Gemini API key is required. Set GEMINI_API_KEY environment variable.")
         
         if self.config.enable_caching:
             self.cache = EmbeddingCache(
@@ -429,7 +429,7 @@ def validate_gemini_embedding_config() -> bool:
     try:
         config = GeminiEmbeddingConfig.from_env()
         if not config.api_key:
-            logger.error("EMBEDDING_API_KEY or GEMINI_API_KEY environment variable is required")
+            logger.error("GEMINI_API_KEY environment variable is required")
             return False
         
         # Test connection

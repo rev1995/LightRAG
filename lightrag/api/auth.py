@@ -1,6 +1,14 @@
+
 from datetime import datetime, timedelta
 
-import jwt
+# Make JWT optional for cases where auth is not needed
+try:
+    import jwt
+    JWT_AVAILABLE = True
+except ImportError:
+    JWT_AVAILABLE = False
+    print("⚠️  JWT not available - authentication features disabled")
+
 from dotenv import load_dotenv
 from fastapi import HTTPException, status
 from pydantic import BaseModel
@@ -68,6 +76,11 @@ class AuthHandler:
             sub=username, exp=expire, role=role, metadata=metadata or {}
         )
 
+        if not JWT_AVAILABLE:
+            raise HTTPException(
+                status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                detail="JWT authentication not available - install PyJWT to enable auth features"
+            )
         return jwt.encode(payload.dict(), self.secret, algorithm=self.algorithm)
 
     def validate_token(self, token: str) -> dict:
@@ -84,6 +97,12 @@ class AuthHandler:
             HTTPException: If token is invalid or expired
         """
         try:
+            if not JWT_AVAILABLE:
+                raise HTTPException(
+                    status_code=status.HTTP_501_NOT_IMPLEMENTED,
+                    detail="JWT authentication not available - install PyJWT to enable auth features"
+                )
+            
             payload = jwt.decode(token, self.secret, algorithms=[self.algorithm])
             expire_timestamp = payload["exp"]
             expire_time = datetime.utcfromtimestamp(expire_timestamp)
@@ -93,14 +112,17 @@ class AuthHandler:
                     status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired"
                 )
 
-            # Return complete payload instead of just username
             return {
                 "username": payload["sub"],
                 "role": payload.get("role", "user"),
                 "metadata": payload.get("metadata", {}),
                 "exp": expire_time,
             }
-        except jwt.PyJWTError:
+        except Exception as e:
+            if JWT_AVAILABLE and hasattr(e, '__class__') and 'PyJWT' in str(type(e)):
+                # JWT specific error
+                pass
+            # Handle all token validation errors the same way
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
             )

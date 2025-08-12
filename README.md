@@ -22,7 +22,7 @@ The LightRAG Server is designed to provide Web UI and API support. The Web UI fa
 * Install from PyPI
 
 ```bash
-pip install "lightrag-hku[api]"
+# LightRAG is included as source code in this repository
 cp env.example .env
 lightrag-server
 ```
@@ -63,7 +63,7 @@ pip install -e .
 * Install from PyPI
 
 ```bash
-pip install lightrag-hku
+# LightRAG source code is already included in ./lightrag/
 ```
 
 ## Quick Start

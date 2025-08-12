@@ -242,6 +242,11 @@ def run_tests():
     print_colored("\n🧪 Running system tests...", Colors.BLUE)
     
     try:
+        # Add LightRAG to path for imports - append to avoid conflicts with stdlib
+        lightrag_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'lightrag'))
+        if lightrag_path not in sys.path:
+            sys.path.append(lightrag_path)
+        
         # Test imports
         from lightrag_gemini_server import app
         from gemini_llm import get_gemini_llm

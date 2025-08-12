@@ -26,8 +26,10 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 load_dotenv(dotenv_path=".env", override=False)
 
-# LightRAG imports (built from source)
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lightrag'))
+# LightRAG imports (built from source) - append to avoid conflicts with stdlib
+lightrag_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'lightrag'))
+if lightrag_path not in sys.path:
+    sys.path.append(lightrag_path)
 
 from lightrag import LightRAG, QueryParam
 from lightrag.utils import EmbeddingFunc, logger, setup_logger

@@ -66,7 +66,7 @@ cp .env.example .env
 **Essential Configuration** (edit `.env`):
 
 ```bash
-# Gemini API Configuration
+# Gemini API Configuration (single key for both LLM and embeddings)
 GEMINI_API_KEY=your_gemini_api_key_here
 LLM_MODEL=gemini-2.0-flash
 EMBEDDING_MODEL=text-embedding-001
@@ -120,7 +120,7 @@ The system uses a comprehensive `.env` file for configuration. Key categories:
 
 #### 🔑 **API Configuration**
 ```bash
-GEMINI_API_KEY=your_gemini_api_key_here
+GEMINI_API_KEY=your_gemini_api_key_here  # Used for both LLM and embeddings
 ```
 
 #### 🤖 **LLM Configuration**

@@ -1,0 +1,7 @@
+give me a full detailed plan, design, architecute for building full end to end rag pipeline with this lightrag using gemini llm, gemini embedding latest model, llm based reranking response, with gemini tokenizer with token tracker. Key feature:
+- end to end rag pipeline
+- all apis should be exposed (all api which is in lightrag/api)
+- graph visualize tool (lightrag/tools)
+- streamlit python fronend - chatinterface with all env paramerters to be seleced (i need all env variables, histroy, token tracked, api call counts for each query/retrival not time specific, request specific), graph visulizer)
+
+Note: do not hallucinate, response should be grounded, robust and reliable. No extra configuration needed. need simple rag app.

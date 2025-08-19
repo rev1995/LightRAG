@@ -46,32 +46,6 @@
     <img src="./README.assets/b2aaf634151b4706892693ffb43d9093.png" width="800" alt="LightRAG Diagram">
 </div>
 
----
-## 🎉 News
-- [X] [2025.06.16]🎯📢Our team has released [RAG-Anything](https://github.com/HKUDS/RAG-Anything) an All-in-One Multimodal RAG System for seamless text, image, table, and equation processing.
-- [X] [2025.06.05]🎯📢LightRAG now supports comprehensive multimodal data handling through [RAG-Anything](https://github.com/HKUDS/RAG-Anything) integration, enabling seamless document parsing and RAG capabilities across diverse formats including PDFs, images, Office documents, tables, and formulas. Please refer to the new [multimodal section](https://github.com/HKUDS/LightRAG/?tab=readme-ov-file#multimodal-document-processing-rag-anything-integration) for details.
-- [X] [2025.03.18]🎯📢LightRAG now supports citation functionality, enabling proper source attribution.
-- [X] [2025.02.05]🎯📢Our team has released [VideoRAG](https://github.com/HKUDS/VideoRAG) understanding extremely long-context videos.
-- [X] [2025.01.13]🎯📢Our team has released [MiniRAG](https://github.com/HKUDS/MiniRAG) making RAG simpler with small models.
-- [X] [2025.01.06]🎯📢You can now [use PostgreSQL for Storage](#using-postgresql-for-storage).
-- [X] [2024.12.31]🎯📢LightRAG now supports [deletion by document ID](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#delete).
-- [X] [2024.11.25]🎯📢LightRAG now supports seamless integration of [custom knowledge graphs](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#insert-custom-kg), empowering users to enhance the system with their own domain expertise.
-- [X] [2024.11.19]🎯📢A comprehensive guide to LightRAG is now available on [LearnOpenCV](https://learnopencv.com/lightrag). Many thanks to the blog author.
-- [X] [2024.11.11]🎯📢LightRAG now supports [deleting entities by their names](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#delete).
-- [X] [2024.11.09]🎯📢Introducing the [LightRAG Gui](https://lightrag-gui.streamlit.app), which allows you to insert, query, visualize, and download LightRAG knowledge.
-- [X] [2024.11.04]🎯📢You can now [use Neo4J for Storage](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#using-neo4j-for-storage).
-- [X] [2024.10.29]🎯📢LightRAG now supports multiple file types, including PDF, DOC, PPT, and CSV via `textract`.
-- [X] [2024.10.20]🎯📢We've added a new feature to LightRAG: Graph Visualization.
-- [X] [2024.10.18]🎯📢We've added a link to a [LightRAG Introduction Video](https://youtu.be/oageL-1I0GE). Thanks to the author!
-- [X] [2024.10.17]🎯📢We have created a [Discord channel](https://discord.gg/yF2MmDJyGJ)! Welcome to join for sharing and discussions! 🎉🎉
-- [X] [2024.10.16]🎯📢LightRAG now supports [Ollama models](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#quick-start)!
-- [X] [2024.10.15]🎯📢LightRAG now supports [Hugging Face models](https://github.com/HKUDS/LightRAG?tab=readme-ov-file#quick-start)!
-
-<details>
-  <summary style="font-size: 1.4em; font-weight: bold; cursor: pointer; display: list-item;">
-    Algorithm Flowchart
-  </summary>
-
 ![LightRAG Indexing Flowchart](https://learnopencv.com/wp-content/uploads/2024/11/LightRAG-VectorDB-Json-KV-Store-Indexing-Flowchart-scaled.jpg)
 *Figure 1: LightRAG Indexing Flowchart - Img Caption : [Source](https://learnopencv.com/lightrag/)*
 ![LightRAG Retrieval and Querying Flowchart](https://learnopencv.com/wp-content/uploads/2024/11/LightRAG-Querying-Flowchart-Dual-Level-Retrieval-Generation-Knowledge-Graphs-scaled.jpg)
@@ -1465,366 +1439,407 @@ The LightRAG Server is designed to provide Web UI and API support.  **For more i
 
 The LightRAG Server offers a comprehensive knowledge graph visualization feature. It supports various gravity layouts, node queries, subgraph filtering, and more. **For more information about LightRAG Server, please refer to [LightRAG Server](./lightrag/api/README.md).**
 
-![iShot_2025-03-23_12.40.08](./README.assets/iShot_2025-03-23_12.40.08.png)
+# 🚀 LightRAG Gemini Integration
 
-## Evaluation
+**Advanced RAG System with Google Gemini Integration, Comprehensive Monitoring, and Interactive Web Interface**
 
-### Dataset
+This project extends LightRAG with Google Gemini integration, providing a complete end-to-end RAG pipeline with advanced features including token tracking, cost monitoring, graph visualization, and a rich Streamlit frontend.
 
-The dataset used in LightRAG can be downloaded from [TommyChien/UltraDomain](https://huggingface.co/datasets/TommyChien/UltraDomain).
+## 🌟 Key Features
 
-### Generate Query
+✅ **Complete Gemini Integration**: Latest Gemini 2.0-flash LLM and text-embedding-004  
+✅ **End-to-End RAG Pipeline**: Document ingestion → Knowledge Graph → Query Processing  
+✅ **All LightRAG APIs Exposed**: Full FastAPI server with all endpoints  
+✅ **LLM-Based Reranking**: Advanced relevance scoring using Gemini  
+✅ **Comprehensive Token Tracking**: Real-time usage monitoring and cost estimation  
+✅ **Interactive Graph Visualization**: Explore knowledge graphs with PyVis  
+✅ **Rich Streamlit Frontend**: Chat interface, analytics dashboard, configuration panel  
+✅ **Local LightRAG Source**: Uses local LightRAG source code (no pip installation needed)  
+✅ **Configurable Storage**: Support for JSON, Redis, Neo4j, PostgreSQL, and more  
+✅ **Docker Support**: Easy deployment with Docker Compose  
 
-LightRAG uses the following prompt to generate high-level queries, with the corresponding code in `example/generate_query.py`.
-
-<details>
-<summary> Prompt </summary>
-
-```python
-Given the following description of a dataset:
-
-{description}
-
-Please identify 5 potential users who would engage with this dataset. For each user, list 5 tasks they would perform with this dataset. Then, for each (user, task) combination, generate 5 questions that require a high-level understanding of the entire dataset.
-
-Output the results in the following structure:
-- User 1: [user description]
-    - Task 1: [task description]
-        - Question 1:
-        - Question 2:
-        - Question 3:
-        - Question 4:
-        - Question 5:
-    - Task 2: [task description]
-        ...
-    - Task 5: [task description]
-- User 2: [user description]
-    ...
-- User 5: [user description]
-    ...
-```
-
-</details>
-
-### Batch Eval
-
-To evaluate the performance of two RAG systems on high-level queries, LightRAG uses the following prompt, with the specific code available in `reproduce/batch_eval.py`.
-
-<details>
-<summary> Prompt </summary>
-
-```python
----Role---
-You are an expert tasked with evaluating two answers to the same question based on three criteria: **Comprehensiveness**, **Diversity**, and **Empowerment**.
----Goal---
-You will evaluate two answers to the same question based on three criteria: **Comprehensiveness**, **Diversity**, and **Empowerment**.
-
-- **Comprehensiveness**: How much detail does the answer provide to cover all aspects and details of the question?
-- **Diversity**: How varied and rich is the answer in providing different perspectives and insights on the question?
-- **Empowerment**: How well does the answer help the reader understand and make informed judgments about the topic?
-
-For each criterion, choose the better answer (either Answer 1 or Answer 2) and explain why. Then, select an overall winner based on these three categories.
-
-Here is the question:
-{query}
-
-Here are the two answers:
-
-**Answer 1:**
-{answer1}
-
-**Answer 2:**
-{answer2}
-
-Evaluate both answers using the three criteria listed above and provide detailed explanations for each criterion.
-
-Output your evaluation in the following JSON format:
-
-{{
-    "Comprehensiveness": {{
-        "Winner": "[Answer 1 or Answer 2]",
-        "Explanation": "[Provide explanation here]"
-    }},
-    "Empowerment": {{
-        "Winner": "[Answer 1 or Answer 2]",
-        "Explanation": "[Provide explanation here]"
-    }},
-    "Overall Winner": {{
-        "Winner": "[Answer 1 or Answer 2]",
-        "Explanation": "[Summarize why this answer is the overall winner based on the three criteria]"
-    }}
-}}
-```
-
-</details>
-
-### Overall Performance Table
-
-|                      |**Agriculture**|            |**CS**|            |**Legal**|            |**Mix**|            |
-|----------------------|---------------|------------|------|------------|---------|------------|-------|------------|
-|                      |NaiveRAG|**LightRAG**|NaiveRAG|**LightRAG**|NaiveRAG|**LightRAG**|NaiveRAG|**LightRAG**|
-|**Comprehensiveness**|32.4%|**67.6%**|38.4%|**61.6%**|16.4%|**83.6%**|38.8%|**61.2%**|
-|**Diversity**|23.6%|**76.4%**|38.0%|**62.0%**|13.6%|**86.4%**|32.4%|**67.6%**|
-|**Empowerment**|32.4%|**67.6%**|38.8%|**61.2%**|16.4%|**83.6%**|42.8%|**57.2%**|
-|**Overall**|32.4%|**67.6%**|38.8%|**61.2%**|15.2%|**84.8%**|40.0%|**60.0%**|
-|                      |RQ-RAG|**LightRAG**|RQ-RAG|**LightRAG**|RQ-RAG|**LightRAG**|RQ-RAG|**LightRAG**|
-|**Comprehensiveness**|31.6%|**68.4%**|38.8%|**61.2%**|15.2%|**84.8%**|39.2%|**60.8%**|
-|**Diversity**|29.2%|**70.8%**|39.2%|**60.8%**|11.6%|**88.4%**|30.8%|**69.2%**|
-|**Empowerment**|31.6%|**68.4%**|36.4%|**63.6%**|15.2%|**84.8%**|42.4%|**57.6%**|
-|**Overall**|32.4%|**67.6%**|38.0%|**62.0%**|14.4%|**85.6%**|40.0%|**60.0%**|
-|                      |HyDE|**LightRAG**|HyDE|**LightRAG**|HyDE|**LightRAG**|HyDE|**LightRAG**|
-|**Comprehensiveness**|26.0%|**74.0%**|41.6%|**58.4%**|26.8%|**73.2%**|40.4%|**59.6%**|
-|**Diversity**|24.0%|**76.0%**|38.8%|**61.2%**|20.0%|**80.0%**|32.4%|**67.6%**|
-|**Empowerment**|25.2%|**74.8%**|40.8%|**59.2%**|26.0%|**74.0%**|46.0%|**54.0%**|
-|**Overall**|24.8%|**75.2%**|41.6%|**58.4%**|26.4%|**73.6%**|42.4%|**57.6%**|
-|                      |GraphRAG|**LightRAG**|GraphRAG|**LightRAG**|GraphRAG|**LightRAG**|GraphRAG|**LightRAG**|
-|**Comprehensiveness**|45.6%|**54.4%**|48.4%|**51.6%**|48.4%|**51.6%**|**50.4%**|49.6%|
-|**Diversity**|22.8%|**77.2%**|40.8%|**59.2%**|26.4%|**73.6%**|36.0%|**64.0%**|
-|**Empowerment**|41.2%|**58.8%**|45.2%|**54.8%**|43.6%|**56.4%**|**50.8%**|49.2%|
-|**Overall**|45.2%|**54.8%**|48.0%|**52.0%**|47.2%|**52.8%**|**50.4%**|49.6%|
-
-## Reproduce
-
-All the code can be found in the `./reproduce` directory.
-
-### Step-0 Extract Unique Contexts
-
-First, we need to extract unique contexts in the datasets.
-
-<details>
-<summary> Code </summary>
-
-```python
-def extract_unique_contexts(input_directory, output_directory):
-
-    os.makedirs(output_directory, exist_ok=True)
-
-    jsonl_files = glob.glob(os.path.join(input_directory, '*.jsonl'))
-    print(f"Found {len(jsonl_files)} JSONL files.")
-
-    for file_path in jsonl_files:
-        filename = os.path.basename(file_path)
-        name, ext = os.path.splitext(filename)
-        output_filename = f"{name}_unique_contexts.json"
-        output_path = os.path.join(output_directory, output_filename)
-
-        unique_contexts_dict = {}
-
-        print(f"Processing file: {filename}")
-
-        try:
-            with open(file_path, 'r', encoding='utf-8') as infile:
-                for line_number, line in enumerate(infile, start=1):
-                    line = line.strip()
-                    if not line:
-                        continue
-                    try:
-                        json_obj = json.loads(line)
-                        context = json_obj.get('context')
-                        if context and context not in unique_contexts_dict:
-                            unique_contexts_dict[context] = None
-                    except json.JSONDecodeError as e:
-                        print(f"JSON decoding error in file {filename} at line {line_number}: {e}")
-        except FileNotFoundError:
-            print(f"File not found: {filename}")
-            continue
-        except Exception as e:
-            print(f"An error occurred while processing file {filename}: {e}")
-            continue
-
-        unique_contexts_list = list(unique_contexts_dict.keys())
-        print(f"There are {len(unique_contexts_list)} unique `context` entries in the file {filename}.")
-
-        try:
-            with open(output_path, 'w', encoding='utf-8') as outfile:
-                json.dump(unique_contexts_list, outfile, ensure_ascii=False, indent=4)
-            print(f"Unique `context` entries have been saved to: {output_filename}")
-        except Exception as e:
-            print(f"An error occurred while saving to the file {output_filename}: {e}")
-
-    print("All files have been processed.")
+## 📁 Project Structure
 
 ```
-
-</details>
-
-### Step-1 Insert Contexts
-
-For the extracted contexts, we insert them into the LightRAG system.
-
-<details>
-<summary> Code </summary>
-
-```python
-def insert_text(rag, file_path):
-    with open(file_path, mode='r') as f:
-        unique_contexts = json.load(f)
-
-    retries = 0
-    max_retries = 3
-    while retries < max_retries:
-        try:
-            rag.insert(unique_contexts)
-            break
-        except Exception as e:
-            retries += 1
-            print(f"Insertion failed, retrying ({retries}/{max_retries}), error: {e}")
-            time.sleep(10)
-    if retries == max_retries:
-        print("Insertion failed after exceeding the maximum number of retries")
+lightrag_gemini_app/                    # Main project directory
+├── LightRAG/                          # LightRAG source code (your existing repo)
+│   ├── lightrag/                      # Core LightRAG package
+│   ├── docs/
+│   ├── README.md
+│   └── ...                           # All existing LightRAG files
+│
+├── app/                               # Our application code
+│   ├── main_server.py                 # LightRAG API server entry point
+│   ├── streamlit_app.py               # Streamlit frontend entry point
+│   ├── setup_lightrag.py              # Python path setup for local LightRAG
+│   ├── requirements.txt               # Dependencies (no lightrag dependency)
+│   ├── .env.example                  # Environment configuration template
+│   │
+│   ├── gemini_integration/            # Gemini integration modules
+│   │   ├── gemini_llm.py             # Enhanced Gemini LLM with tracking
+│   │   ├── gemini_embeddings.py      # Gemini embeddings with tracking  
+│   │   ├── gemini_tokenizer.py       # Gemini tokenizer
+│   │   └── gemini_reranker.py        # LLM-based reranking
+│   │
+│   ├── streamlit_components/          # Streamlit UI components
+│   │   ├── chat_interface.py         # Main chat interface
+│   │   ├── monitoring_dashboard.py   # Analytics dashboard
+│   │   ├── graph_visualizer.py       # Graph visualization
+│   │   ├── configuration_panel.py    # Settings management
+│   │   └── document_manager.py       # Document management
+│   │
+│   ├── monitoring/                   # Monitoring and analytics
+│   │   ├── token_tracker.py          # Enhanced token tracking
+│   │   ├── performance_monitor.py    # Performance metrics
+│   │   └── cost_calculator.py        # Cost estimation
+│   │
+│   └── utils/                        # Utility modules
+│       ├── api_client.py             # LightRAG API client
+│       ├── config_manager.py         # Configuration management
+│       └── data_models.py            # Data structures
+│
+├── storage/                          # Data storage
+│   ├── rag_storage/                  # LightRAG working directory
+│   ├── documents/                    # Document uploads
+│   ├── exports/                      # Graph exports
+│   └── logs/                         # Application logs
+│
+├── docker-compose.yml                # Docker deployment
+├── Dockerfile                        # Docker build configuration
+└── README.md                         # This file
 ```
 
-</details>
+## 🚀 Quick Start
 
-### Step-2 Generate Queries
+### **Prerequisites**
 
-We extract tokens from the first and the second half of each context in the dataset, then combine them as dataset descriptions to generate queries.
+- Python 3.10 or higher
+- Google Gemini API key
+- Git
 
-<details>
-<summary> Code </summary>
+### **1. Clone and Setup**
 
-```python
-tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+```bash
+# Clone your LightRAG repository (if not already done)
+git clone https://github.com/HKUDS/LightRAG.git
+cd LightRAG
 
-def get_summary(context, tot_tokens=2000):
-    tokens = tokenizer.tokenize(context)
-    half_tokens = tot_tokens // 2
+# Create the app directory structure
+mkdir -p lightrag_gemini_app/app
+cd lightrag_gemini_app
 
-    start_tokens = tokens[1000:1000 + half_tokens]
-    end_tokens = tokens[-(1000 + half_tokens):1000]
-
-    summary_tokens = start_tokens + end_tokens
-    summary = tokenizer.convert_tokens_to_string(summary_tokens)
-
-    return summary
+# Move the LightRAG source to the project directory
+mv ../LightRAG ./LightRAG
 ```
 
-</details>
+### **2. Install Dependencies**
 
-### Step-3 Query
-
-For the queries generated in Step-2, we will extract them and query LightRAG.
-
-<details>
-<summary> Code </summary>
-
-```python
-def extract_queries(file_path):
-    with open(file_path, 'r') as f:
-        data = f.read()
-
-    data = data.replace('**', '')
-
-    queries = re.findall(r'- Question \d+: (.+)', data)
-
-    return queries
+```bash
+cd app
+pip install -r requirements.txt
 ```
 
-</details>
+### **3. Configure Environment**
 
-## 🔗 Related Projects
+```bash
+# Copy the example environment file
+cp .env.example .env
 
-*Ecosystem & Extensions*
+# Edit .env and add your Gemini API key
+nano .env
+```
 
-<div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <a href="https://github.com/HKUDS/RAG-Anything">
-          <div style="width: 100px; height: 100px; background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(0, 217, 255, 0.05) 100%); border-radius: 15px; border: 1px solid rgba(0, 217, 255, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-            <span style="font-size: 32px;">📸</span>
-          </div>
-          <b>RAG-Anything</b><br>
-          <sub>Multimodal RAG</sub>
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/HKUDS/VideoRAG">
-          <div style="width: 100px; height: 100px; background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(0, 217, 255, 0.05) 100%); border-radius: 15px; border: 1px solid rgba(0, 217, 255, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-            <span style="font-size: 32px;">🎥</span>
-          </div>
-          <b>VideoRAG</b><br>
-          <sub>Extreme Long-Context Video RAG</sub>
-        </a>
-      </td>
-      <td align="center">
-        <a href="https://github.com/HKUDS/MiniRAG">
-          <div style="width: 100px; height: 100px; background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(0, 217, 255, 0.05) 100%); border-radius: 15px; border: 1px solid rgba(0, 217, 255, 0.2); display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
-            <span style="font-size: 32px;">✨</span>
-          </div>
-          <b>MiniRAG</b><br>
-          <sub>Extremely Simple RAG</sub>
-        </a>
-      </td>
-    </tr>
-  </table>
-</div>
+**Required Environment Variables:**
+```bash
+GEMINI_API_KEY=your_gemini_api_key_here
+```
+
+### **4. Start the Services**
+
+**Option A: Manual Start (Recommended for Development)**
+
+```bash
+# Terminal 1: Start LightRAG API Server
+cd app
+python main_server.py
+
+# Terminal 2: Start Streamlit Frontend  
+cd app
+streamlit run streamlit_app.py
+```
+
+**Option B: Docker Compose**
+
+```bash
+docker-compose up -d
+```
+
+### **5. Access the Application**
+
+- **Streamlit Frontend**: http://localhost:8501
+- **LightRAG API**: http://localhost:9621
+- **API Documentation**: http://localhost:9621/docs
+
+## 📖 Usage Guide
+
+### **Chat Interface**
+
+1. **Upload Documents**: Use the Document Manager to upload PDF, TXT, or other documents
+2. **Configure Query**: Set query parameters in the sidebar (mode, top_k, etc.)
+3. **Ask Questions**: Chat with your documents using natural language
+4. **Monitor Usage**: Track token usage and costs in real-time
+
+### **Analytics Dashboard**
+
+- **Token Usage**: View token consumption over time
+- **Performance Metrics**: Monitor response times and success rates
+- **Cost Analysis**: Track API costs and usage patterns
+- **Query Analytics**: Analyze query modes and patterns
+
+### **Graph Visualization**
+
+- **Interactive Graph**: Explore the knowledge graph with zoom, pan, and click
+- **Node Details**: Click nodes to see entity information
+- **Layout Options**: Choose different graph layouts (spring, circular, etc.)
+- **Export Options**: Export graph data in various formats
+
+### **Configuration Panel**
+
+- **API Settings**: Configure Gemini API keys and models
+- **Model Parameters**: Adjust temperature, token limits, etc.
+- **Storage Settings**: Switch between storage backends
+- **Advanced Options**: Fine-tune performance settings
+
+## 🎯 Query Modes
+
+The system supports multiple query modes for different use cases:
+
+- **`mix`** (default): Combines knowledge graph and vector retrieval
+- **`local`**: Context-dependent entity-focused retrieval  
+- **`global`**: Relationship-focused retrieval across knowledge graph
+- **`hybrid`**: Combines local and global approaches
+- **`naive`**: Simple vector similarity search
+
+## 💾 Storage Options
+
+**Default (Local JSON)**:
+- JsonKVStorage for key-value data
+- NanoVectorDBStorage for vectors
+- NetworkXStorage for graphs
+
+**Production Options**:
+- Redis for key-value storage
+- Neo4j/Memgraph for graphs
+- Qdrant/Milvus for vectors
+- PostgreSQL for all-in-one
+
+## 📊 Monitoring Features
+
+### **Token Tracking**
+- Real-time token usage monitoring
+- Per-query token breakdown
+- Session and historical tracking
+- Cost estimation based on Gemini pricing
+
+### **Performance Metrics**
+- Response time tracking
+- Success rate monitoring
+- API call counting
+- Error rate analysis
+
+### **Analytics Dashboard**
+- Usage trends over time
+- Query mode performance comparison
+- Cost analysis and optimization insights
+- System health monitoring
+
+## 🔧 Advanced Configuration
+
+### **Gemini Models**
+
+**Available LLM Models:**
+- `gemini-2.0-flash` (latest, recommended)
+- `gemini-1.5-pro`
+- `gemini-1.5-flash`
+
+**Available Embedding Models:**
+- `text-embedding-004` (latest, recommended)
+- `textembedding-gecko`
+
+### **Performance Tuning**
+
+```bash
+# Concurrency settings
+MAX_ASYNC=4                  # Max parallel LLM requests
+MAX_PARALLEL_INSERT=2        # Max parallel document processing
+EMBEDDING_FUNC_MAX_ASYNC=8   # Max parallel embedding requests
+
+# Memory settings
+CHUNK_SIZE=1200              # Document chunk size
+MAX_TOTAL_TOKENS=30000       # Max tokens per query
+```
+
+### **Storage Backends**
+
+**Redis Setup:**
+```bash
+LIGHTRAG_KV_STORAGE=RedisKVStorage
+REDIS_URI=redis://localhost:6379
+```
+
+**Neo4j Setup:**
+```bash
+LIGHTRAG_GRAPH_STORAGE=Neo4JStorage
+NEO4J_URI=neo4j+s://xxxx.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your_password
+```
+
+## 🐳 Docker Deployment
+
+### **Docker Compose (Recommended)**
+
+```yaml
+version: '3.8'
+services:
+  lightrag-api:
+    build: .
+    ports:
+      - "9621:9621"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    volumes:
+      - ./storage:/app/storage
+
+  streamlit-frontend:
+    build: .
+    ports:
+      - "8501:8501"
+    depends_on:
+      - lightrag-api
+    command: streamlit run streamlit_app.py
+```
+
+### **Build and Run**
+
+```bash
+# Set your API key
+export GEMINI_API_KEY=your_gemini_api_key_here
+
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+## 🔍 API Reference
+
+The system exposes all LightRAG APIs plus additional monitoring endpoints:
+
+### **Core APIs**
+- `POST /documents/upload` - Upload documents
+- `POST /query` - Query the knowledge base
+- `GET /graph/export` - Export graph data
+- `GET /health` - Health check
+
+### **Monitoring APIs**
+- `GET /metrics/tokens` - Token usage statistics
+- `GET /metrics/performance` - Performance metrics
+- `GET /metrics/costs` - Cost analysis
+
+### **Graph APIs**
+- `GET /graph/nodes` - Get graph nodes
+- `GET /graph/edges` - Get graph edges
+- `GET /graph/statistics` - Graph analytics
+
+## 🛠️ Development
+
+### **Adding Custom Components**
+
+1. **Custom LLM Integration**: Extend `gemini_integration/`
+2. **New Streamlit Components**: Add to `streamlit_components/`
+3. **Additional Monitoring**: Extend `monitoring/`
+
+### **Testing**
+
+```bash
+# Run tests
+pytest tests/
+
+# Test specific components
+pytest tests/test_gemini_integration.py
+```
+
+## 📈 Performance Optimization
+
+### **Query Performance**
+- Use appropriate query modes for your use case
+- Tune `top_k` and `chunk_top_k` parameters
+- Enable caching for repeated queries
+- Use reranking for better relevance
+
+### **Cost Optimization**
+- Monitor token usage in real-time
+- Use caching to reduce API calls
+- Optimize chunk sizes
+- Choose appropriate models for your needs
+
+## 🔒 Security
+
+- Store API keys in environment variables
+- Use authentication for production deployments
+- Limit API access with rate limiting
+- Secure storage backends with proper credentials
+
+## 🐛 Troubleshooting
+
+### **Common Issues**
+
+**1. LightRAG Import Errors**
+```bash
+# Ensure LightRAG directory is in the correct location
+ls ../LightRAG  # Should show lightrag/ directory
+
+# Run setup verification
+python setup_lightrag.py
+```
+
+**2. Gemini API Errors**
+```bash
+# Check API key
+echo $GEMINI_API_KEY
+
+# Test API connectivity
+python -c "import google.generativeai as genai; genai.configure(api_key='your_key'); print('API OK')"
+```
+
+**3. Storage Errors**
+```bash
+# Check storage directories
+mkdir -p ../storage/{rag_storage,documents,logs}
+
+# Check permissions
+chmod 755 ../storage
+```
+
+## 📞 Support
+
+- **GitHub Issues**: [LightRAG Issues](https://github.com/HKUDS/LightRAG/issues)
+- **Documentation**: Check the `docs/` directory in LightRAG
+- **Community**: Join the Discord community
+
+## 📄 License
+
+This project follows the same license as LightRAG. See the LightRAG repository for license details.
+
+## 🙏 Acknowledgments
+
+- **LightRAG Team**: For the excellent RAG framework
+- **Google**: For the Gemini API and models
+- **Streamlit**: For the amazing web framework
+- **Community**: For contributions and feedback
 
 ---
 
-## ⭐ Star History
-
-<a href="https://star-history.com/#HKUDS/LightRAG&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=HKUDS/LightRAG&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=HKUDS/LightRAG&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=HKUDS/LightRAG&type=Date" />
- </picture>
-</a>
-
-## 🤝 Contribution
-
-<div align="center">
-  We thank all our contributors for their valuable contributions.
-</div>
-
-<div align="center">
-  <a href="https://github.com/HKUDS/LightRAG/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=HKUDS/LightRAG" style="border-radius: 15px; box-shadow: 0 0 20px rgba(0, 217, 255, 0.3);" />
-  </a>
-</div>
-
----
-
-
-## 📖 Citation
-
-```python
-@article{guo2024lightrag,
-title={LightRAG: Simple and Fast Retrieval-Augmented Generation},
-author={Zirui Guo and Lianghao Xia and Yanhua Yu and Tu Ao and Chao Huang},
-year={2024},
-eprint={2410.05779},
-archivePrefix={arXiv},
-primaryClass={cs.IR}
-}
-```
-
----
-
-<div align="center" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; padding: 30px; margin: 30px 0;">
-  <div>
-    <img src="https://user-images.githubusercontent.com/74038190/212284100-561aa473-3905-4a80-b561-0d28506553ee.gif" width="500">
-  </div>
-  <div style="margin-top: 20px;">
-    <a href="https://github.com/HKUDS/LightRAG" style="text-decoration: none;">
-      <img src="https://img.shields.io/badge/⭐%20Star%20us%20on%20GitHub-1a1a2e?style=for-the-badge&logo=github&logoColor=white">
-    </a>
-    <a href="https://github.com/HKUDS/LightRAG/issues" style="text-decoration: none;">
-      <img src="https://img.shields.io/badge/🐛%20Report%20Issues-ff6b6b?style=for-the-badge&logo=github&logoColor=white">
-    </a>
-    <a href="https://github.com/HKUDS/LightRAG/discussions" style="text-decoration: none;">
-      <img src="https://img.shields.io/badge/💬%20Discussions-4ecdc4?style=for-the-badge&logo=github&logoColor=white">
-    </a>
-  </div>
-</div>
-
-<div align="center">
-  <div style="width: 100%; max-width: 600px; margin: 20px auto; padding: 20px; background: linear-gradient(135deg, rgba(0, 217, 255, 0.1) 0%, rgba(0, 217, 255, 0.05) 100%); border-radius: 15px; border: 1px solid rgba(0, 217, 255, 0.2);">
-    <div style="display: flex; justify-content: center; align-items: center; gap: 15px;">
-      <span style="font-size: 24px;">⭐</span>
-      <span style="color: #00d9ff; font-size: 18px;">Thank you for visiting LightRAG!</span>
-      <span style="font-size: 24px;">⭐</span>
-    </div>
-  </div>
-</div>
+**🎉 Enjoy your advanced RAG system with Gemini integration!**
